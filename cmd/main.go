@@ -58,9 +58,9 @@ func main() {
 
 	// Parameters構造体を作成し、関数を使ってパラメータを設定
 	params := stockdata.Parameters{}
-	params.SetStopLoss(2.0, 5.0, 1.0)
-	params.SetTrailingStop(5.0, 10.0, 1.0)
-	params.SetTrailingStopUpdate(2.0, 5.0, 1.0)
+	params.SetStopLoss(2.0, 10.0, 1.0)
+	params.SetTrailingStop(5.0, 20.0, 1.0)
+	params.SetTrailingStopUpdate(2.0, 10.0, 1.0)
 
 	// 総試行回数を算出
 	totalTrials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates) * len(stockResponse.SymbolData) * numSignals
