@@ -4,30 +4,20 @@ package optimization
 
 import (
 	"sort"
-	"time"
 
 	"go-optimal-stop/internal/stockdata"
 	"go-optimal-stop/internal/trading"
 )
 
 // OptimizeParameters 関数の定義
-func OptimizeParameters(inputData *[]stockdata.Data, tradeStartDate string) (stockdata.Result, stockdata.Result, []stockdata.Result) {
+func OptimizeParameters(response *stockdata.StockResponse, params stockdata.Parameters) (stockdata.Result, stockdata.Result, []stockdata.Result) {
 	var results []stockdata.Result
 
-	stopLossPercentages := []float64{2.0, 3.0}
-	trailingStopTriggers := []float64{5.0, 6.0, 7.0, 8.0, 9.0}
-	trailingStopUpdates := []float64{2.0, 3.0}
-
-	// tradeStartDate を time.Time 型に変換
-	startDate, err := time.Parse("2006-01-02", tradeStartDate)
-	if err != nil {
-		return stockdata.Result{}, stockdata.Result{}, nil // エラーハンドリング
-	}
-
-	for _, stopLossPercentage := range stopLossPercentages {
-		for _, trailingStopTrigger := range trailingStopTriggers {
-			for _, trailingStopUpdate := range trailingStopUpdates {
-				purchaseDate, exitDate, profitLoss, err := trading.TradingStrategy(inputData, startDate, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
+	for _, stopLossPercentage := range params.StopLossPercentages {
+		for _, trailingStopTrigger := range params.TrailingStopTriggers {
+			for _, trailingStopUpdate := range params.TrailingStopUpdates {
+				// TradingStrategy 関数を呼び出して総利益を計算
+				totalProfitLoss, err := trading.TradingStrategy(response, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
 				if err != nil {
 					continue
 				}
@@ -35,9 +25,7 @@ func OptimizeParameters(inputData *[]stockdata.Data, tradeStartDate string) (sto
 					StopLossPercentage:  stopLossPercentage,
 					TrailingStopTrigger: trailingStopTrigger,
 					TrailingStopUpdate:  trailingStopUpdate,
-					ProfitLoss:          profitLoss,
-					PurchaseDate:        purchaseDate.Format("2006-01-02"), // 文字列に変換
-					ExitDate:            exitDate.Format("2006-01-02"),     // 文字列に変換
+					ProfitLoss:          totalProfitLoss,
 				}
 				results = append(results, result)
 			}

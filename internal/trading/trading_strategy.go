@@ -10,7 +10,30 @@ import (
 )
 
 // TradingStrategy 関数
-func TradingStrategy(data *[]stockdata.Data, startDate time.Time, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (time.Time, time.Time, float64, error) {
+func TradingStrategy(response *stockdata.StockResponse, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (float64, error) {
+	totalProfitLoss := 0.0
+
+	for _, symbolData := range response.SymbolData {
+		for _, signal := range symbolData.Signals {
+			startDate, err := parseDate(signal)
+			if err != nil {
+				return 0, err
+			}
+
+			// シンボルの株価データを使って最適化を実行
+			_, _, profitLoss, err := singleTradingStrategy(&symbolData.DailyData, startDate, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
+			if err != nil {
+				return 0, err
+			}
+			totalProfitLoss += profitLoss
+		}
+	}
+
+	return totalProfitLoss, nil
+}
+
+// singleTradingStrategy 関数
+func singleTradingStrategy(data *[]stockdata.Data, startDate time.Time, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (time.Time, time.Time, float64, error) {
 	d := *data
 	if len(d) == 0 {
 		return time.Time{}, time.Time{}, 0, errors.New("データが空です")
