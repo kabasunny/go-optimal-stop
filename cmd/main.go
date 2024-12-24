@@ -22,9 +22,22 @@ func main() {
 	useRandomSeed := flag.Bool("random", false, "Use random seed")
 	flag.Parse()
 
-	csvDir := "csv"                                // CSVファイルが保存されているディレクトリ
-	symbols := []string{"7203.T", "AAPL", "GOOGL"} // シンボルのリスト
-	numSignals := 10                               // ランダムに選ぶシグナルの数
+	csvDir := "csv" // CSVファイルが保存されているディレクトリ
+	symbols := []string{
+		"7203.T", // Toyota Motor Corporation
+		"7201.T", // Nissan Motor Co., Ltd.
+		"7267.T", // Honda Motor Co., Ltd.
+		"7261.T", // Mazda Motor Corporation
+		"7269.T", // Suzuki Motor Corporation
+		// "7262.T",  // Mitsubishi Motors Corporation 上場廃止
+		"7270.T", // Subaru Corporation
+		"7202.T", // Isuzu Motors Limited
+		"7205.T", // Hino Motors, Ltd.
+		"7211.T", // Mitsubishi Fuso Truck and Bus Corporation
+		"7224.T", // Shizuoka Daihatsu Motor Co., Ltd.
+		"7266.T", // Showa Corporation} // シンボルのリスト
+	}
+	numSignals := 50 // ランダムに選ぶシグナルの数
 
 	var stockResponse stockdata.StockResponse
 	var err error
@@ -45,9 +58,9 @@ func main() {
 
 	// Parameters構造体を作成し、関数を使ってパラメータを設定
 	params := stockdata.Parameters{}
-	params.SetStopLoss(2.0, 10.0, 1.0)
-	params.SetTrailingStop(5.0, 20.0, 1.0)
-	params.SetTrailingStopUpdate(2.0, 10.0, 1.0)
+	params.SetStopLoss(2.0, 5.0, 1.0)
+	params.SetTrailingStop(5.0, 10.0, 1.0)
+	params.SetTrailingStopUpdate(2.0, 5.0, 1.0)
 
 	// 総試行回数を算出
 	totalTrials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates) * len(stockResponse.SymbolData) * numSignals

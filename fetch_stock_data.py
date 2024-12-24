@@ -22,8 +22,21 @@ def fetch_stock_data(symbol, start_date, end_date):
 
 
 def main():
-    symbols = ["7203.T", "AAPL", "GOOGL"]  # シンボルリストの例
-    start_date = "2012-01-01"  # 開始日
+    symbols = [
+        "7203.T",  # Toyota Motor Corporation
+        "7201.T",  # Nissan Motor Co., Ltd.
+        "7267.T",  # Honda Motor Co., Ltd.
+        "7261.T",  # Mazda Motor Corporation
+        "7269.T",  # Suzuki Motor Corporation
+        # "7262.T",  # Mitsubishi Motors Corporation 上場廃止
+        "7270.T",  # Subaru Corporation
+        "7202.T",  # Isuzu Motors Limited
+        "7205.T",  # Hino Motors, Ltd.
+        "7211.T",  # Mitsubishi Fuso Truck and Bus Corporation
+        "7224.T",  # Shizuoka Daihatsu Motor Co., Ltd.
+        "7266.T",  # Showa Corporation
+        ]  # シンボルリストの例
+    start_date = "2003-01-01"  # 開始日
     end_date = "2023-12-31"  # 終了日
 
     # CSVファイルを保存するフォルダの作成
