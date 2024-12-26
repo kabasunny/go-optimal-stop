@@ -4,12 +4,12 @@ package trading
 
 import (
 	"errors"
-	"go-optimal-stop/internal/stockdata"
+	"go-optimal-stop/internal/ml_stockdata"
 	"time"
 )
 
 // findPurchaseDate 関数: 購入日を見つける
-func findPurchaseDate(data []stockdata.Data, startDate time.Time) (time.Time, float64, error) {
+func findPurchaseDate(data []ml_stockdata.Data, startDate time.Time) (time.Time, float64, error) {
 	for _, day := range data {
 		parsedDate, err := parseDate(day.Date)
 		if err != nil {

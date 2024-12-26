@@ -1,6 +1,6 @@
 // internal/stockdata/data.go
 
-package stockdata
+package ml_stockdata
 
 // Data 構造体の定義
 type Data struct {

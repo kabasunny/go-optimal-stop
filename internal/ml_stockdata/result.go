@@ -1,6 +1,6 @@
 // internal/stockdata/result.go
 
-package stockdata
+package ml_stockdata
 
 // Result 構造体の定義
 type Result struct {

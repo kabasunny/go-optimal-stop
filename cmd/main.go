@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"go-optimal-stop/internal/ml_stockdata"
 	"go-optimal-stop/internal/optimization"
-	"go-optimal-stop/internal/stockdata"
 )
 
 // 実行コマンド
@@ -39,7 +39,7 @@ func main() {
 	}
 	numSignals := 50 // ランダムに選ぶシグナルの数
 
-	var stockResponse stockdata.StockResponse
+	var stockResponse ml_stockdata.MLStockResponse
 	var err error
 
 	if *useRandomSeed {
@@ -57,7 +57,7 @@ func main() {
 	}
 
 	// Parameters構造体を作成し、関数を使ってパラメータを設定
-	params := stockdata.Parameters{}
+	params := ml_stockdata.Parameters{}
 	params.SetStopLoss(2.0, 10.0, 1.0)
 	params.SetTrailingStop(5.0, 20.0, 1.0)
 	params.SetTrailingStopUpdate(2.0, 10.0, 1.0)

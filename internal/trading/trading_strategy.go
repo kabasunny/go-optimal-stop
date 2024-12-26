@@ -6,11 +6,11 @@ import (
 	"errors"
 	"time"
 
-	"go-optimal-stop/internal/stockdata"
+	"go-optimal-stop/internal/ml_stockdata"
 )
 
 // TradingStrategy 関数
-func TradingStrategy(response *stockdata.StockResponse, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (float64, error) {
+func TradingStrategy(response *ml_stockdata.MLStockResponse, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (float64, error) {
 	totalProfitLoss := 0.0
 
 	for _, symbolData := range response.SymbolData {
@@ -33,7 +33,7 @@ func TradingStrategy(response *stockdata.StockResponse, stopLossPercentage, trai
 }
 
 // singleTradingStrategy 関数
-func singleTradingStrategy(data *[]stockdata.Data, startDate time.Time, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (time.Time, time.Time, float64, error) {
+func singleTradingStrategy(data *[]ml_stockdata.Data, startDate time.Time, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (time.Time, time.Time, float64, error) {
 	d := *data
 	if len(d) == 0 {
 		return time.Time{}, time.Time{}, 0, errors.New("データが空です")

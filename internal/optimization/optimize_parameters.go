@@ -5,13 +5,13 @@ package optimization
 import (
 	"sort"
 
-	"go-optimal-stop/internal/stockdata"
+	"go-optimal-stop/internal/ml_stockdata"
 	"go-optimal-stop/internal/trading"
 )
 
 // OptimizeParameters 関数の定義
-func OptimizeParameters(response *stockdata.StockResponse, params stockdata.Parameters) (stockdata.Result, stockdata.Result, []stockdata.Result) {
-	var results []stockdata.Result
+func OptimizeParameters(response *ml_stockdata.MLStockResponse, params ml_stockdata.Parameters) (ml_stockdata.Result, ml_stockdata.Result, []ml_stockdata.Result) {
+	var results []ml_stockdata.Result
 
 	for _, stopLossPercentage := range params.StopLossPercentages {
 		for _, trailingStopTrigger := range params.TrailingStopTriggers {
@@ -21,7 +21,7 @@ func OptimizeParameters(response *stockdata.StockResponse, params stockdata.Para
 				if err != nil {
 					continue
 				}
-				result := stockdata.Result{
+				result := ml_stockdata.Result{
 					StopLossPercentage:  stopLossPercentage,
 					TrailingStopTrigger: trailingStopTrigger,
 					TrailingStopUpdate:  trailingStopUpdate,

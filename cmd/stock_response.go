@@ -5,12 +5,12 @@ package main
 import (
 	"fmt"
 
-	"go-optimal-stop/internal/stockdata"
+	"go-optimal-stop/internal/ml_stockdata"
 )
 
 // CSVファイルからデータを読み込み、StockResponse構造体を作成
-func createStockResponse(csvDir string, symbols []string, numSignals int, seed ...int64) (stockdata.StockResponse, error) {
-	var symbolDataList []stockdata.SymbolData
+func createStockResponse(csvDir string, symbols []string, numSignals int, seed ...int64) (ml_stockdata.MLStockResponse, error) {
+	var symbolDataList []ml_stockdata.MLSymbolData
 
 	for _, symbol := range symbols {
 		filePath := fmt.Sprintf("%s/%s_stock_data.csv", csvDir, symbol)
@@ -18,7 +18,7 @@ func createStockResponse(csvDir string, symbols []string, numSignals int, seed .
 		// CSVファイルを読み込み
 		data, err := loadCSV(filePath)
 		if err != nil {
-			return stockdata.StockResponse{}, fmt.Errorf("CSVファイルの読み込みエラー: %v", err)
+			return ml_stockdata.MLStockResponse{}, fmt.Errorf("CSVファイルの読み込みエラー: %v", err)
 		}
 
 		// ランダムにシグナルを生成
@@ -30,7 +30,7 @@ func createStockResponse(csvDir string, symbols []string, numSignals int, seed .
 		}
 
 		// SymbolData構造体を作成
-		symbolData := stockdata.SymbolData{
+		symbolData := ml_stockdata.MLSymbolData{
 			Symbol:    symbol,
 			DailyData: data,
 			Signals:   signals,
@@ -39,7 +39,7 @@ func createStockResponse(csvDir string, symbols []string, numSignals int, seed .
 	}
 
 	// StockResponse構造体を作成
-	return stockdata.StockResponse{
+	return ml_stockdata.MLStockResponse{
 		SymbolData: symbolDataList,
 	}, nil
 }

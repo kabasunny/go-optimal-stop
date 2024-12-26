@@ -5,12 +5,17 @@ import pandas as pd
 import os
 
 
+
 # pandas.DataFrame を戻す
 def fetch_stock_data(symbol, start_date, end_date):
     # 日足データの取得
     daily_data = yf.download(symbol, start=start_date, end=end_date, interval="1d")
-    return daily_data  # pandas.DataFrame を戻す
 
+    # マルチインデックスの場合、カラムの最初のレベルを削除
+    if isinstance(daily_data.columns, pd.MultiIndex):
+        daily_data.columns = daily_data.columns.droplevel(1)
+
+    return daily_data  # pandas.DataFrame を戻す
 
 #     """
 #                   Open    High     Low   Close    Adj Close    Volume

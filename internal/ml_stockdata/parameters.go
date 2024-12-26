@@ -1,6 +1,6 @@
 // internal/stockdata/parameters.go
 
-package stockdata
+package ml_stockdata
 
 // Parameters 構造体の定義
 type Parameters struct {

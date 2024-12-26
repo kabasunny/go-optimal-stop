@@ -3,7 +3,7 @@
 package trading
 
 import (
-	"go-optimal-stop/internal/stockdata"
+	"go-optimal-stop/internal/ml_stockdata"
 	"time"
 )
 
@@ -13,7 +13,7 @@ func parseDate(dateStr string) (time.Time, error) {
 }
 
 // dateInData 関数: 特定の日付がデータに存在するか確認
-func dateInData(data []stockdata.Data, date time.Time) bool {
+func dateInData(data []ml_stockdata.Data, date time.Time) bool {
 	for _, day := range data {
 		parsedDate, err := parseDate(day.Date)
 		if err != nil {
