@@ -13,7 +13,7 @@ func parseDate(dateStr string) (time.Time, error) {
 }
 
 // dateInData 関数: 特定の日付がデータに存在するか確認
-func dateInData(data []ml_stockdata.Data, date time.Time) bool {
+func dateInData(data []ml_stockdata.MLDailyData, date time.Time) bool {
 	for _, day := range data {
 		parsedDate, err := parseDate(day.Date)
 		if err != nil {

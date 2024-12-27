@@ -33,7 +33,7 @@ func TradingStrategy(response *ml_stockdata.MLStockResponse, stopLossPercentage,
 }
 
 // singleTradingStrategy 関数
-func singleTradingStrategy(data *[]ml_stockdata.Data, startDate time.Time, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (time.Time, time.Time, float64, error) {
+func singleTradingStrategy(data *[]ml_stockdata.MLDailyData, startDate time.Time, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (time.Time, time.Time, float64, error) {
 	d := *data
 	if len(d) == 0 {
 		return time.Time{}, time.Time{}, 0, errors.New("データが空です")

@@ -15,7 +15,7 @@ func calculateStopLoss(purchasePrice, stopLossPercentage, trailingStopTrigger fl
 }
 
 // findExitDate 関数: 退出日を見つける
-func findExitDate(data []ml_stockdata.Data, startDate time.Time, stopLossThreshold, trailingStopTriggerPrice, trailingStopTrigger, trailingStopUpdate float64) (time.Time, float64, error) {
+func findExitDate(data []ml_stockdata.MLDailyData, startDate time.Time, stopLossThreshold, trailingStopTriggerPrice, trailingStopTrigger, trailingStopUpdate float64) (time.Time, float64, error) {
 	var endDate time.Time
 	var endPrice float64
 	for _, day := range data {

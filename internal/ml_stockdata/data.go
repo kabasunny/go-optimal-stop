@@ -2,8 +2,8 @@
 
 package ml_stockdata
 
-// Data 構造体の定義
-type Data struct {
+// MLDailyData 構造体の定義
+type MLDailyData struct {
 	Date     string // 日付を文字列として保持
 	Open     float64
 	High     float64

@@ -11,7 +11,7 @@ import (
 )
 
 // CSVファイルを読み込み、データをstockdata.Data構造体のスライスに変換
-func loadCSV(filePath string) ([]ml_stockdata.Data, error) {
+func loadCSV(filePath string) ([]ml_stockdata.MLDailyData, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func loadCSV(filePath string) ([]ml_stockdata.Data, error) {
 		return nil, err
 	}
 
-	var data []ml_stockdata.Data
+	var data []ml_stockdata.MLDailyData
 	for i, record := range records {
 		// ヘッダー行をスキップ
 		if i == 0 {
@@ -58,7 +58,7 @@ func loadCSV(filePath string) ([]ml_stockdata.Data, error) {
 			return nil, err
 		}
 
-		data = append(data, ml_stockdata.Data{
+		data = append(data, ml_stockdata.MLDailyData{
 			Date:     date,
 			Open:     open,
 			High:     high,
