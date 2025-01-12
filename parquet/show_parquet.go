@@ -6,9 +6,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/parquet-go/parquet-go"
+	parquet "github.com/parquet-go/parquet-go"
 )
 
+// 実行コマンド　go run .\parquet\show_parquet.go
 func main() {
 	fileName := "parquet/1570_2025-01-12.parquet"
 
@@ -39,11 +40,12 @@ func main() {
 	}
 
 	// 指定した行数
-	numRowsToRead := 10
+	numRowsToRead := 20
 
 	// 行を読み込む
 	for _, rowGroup := range pf.RowGroups() {
 		rows := rowGroup.Rows()
+		fmt.Printf("rows %s\n", rows)
 		defer rows.Close()
 
 		// parquet.Rowのスライスを事前に確保
