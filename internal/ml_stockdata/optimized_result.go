@@ -2,8 +2,8 @@
 
 package ml_stockdata
 
-// Result 構造体の定義
-type Result struct {
+// OptimizedionResult 構造体の定義
+type OptimizedionResult struct {
 	StopLossPercentage  float64
 	TrailingStopTrigger float64
 	TrailingStopUpdate  float64

@@ -10,8 +10,8 @@ import (
 )
 
 // OptimizeParameters 関数の定義
-func OptimizeParameters(response *ml_stockdata.MLStockResponse, params ml_stockdata.Parameters) (ml_stockdata.Result, ml_stockdata.Result, []ml_stockdata.Result) {
-	var results []ml_stockdata.Result
+func OptimizeParameters(response *ml_stockdata.InMLStockResponse, params ml_stockdata.Parameters) (ml_stockdata.OptimizedionResult, ml_stockdata.OptimizedionResult, []ml_stockdata.OptimizedionResult) {
+	var results []ml_stockdata.OptimizedionResult
 
 	for _, stopLossPercentage := range params.StopLossPercentages {
 		for _, trailingStopTrigger := range params.TrailingStopTriggers {
@@ -21,7 +21,7 @@ func OptimizeParameters(response *ml_stockdata.MLStockResponse, params ml_stockd
 				if err != nil {
 					continue
 				}
-				result := ml_stockdata.Result{
+				result := ml_stockdata.OptimizedionResult{
 					StopLossPercentage:  stopLossPercentage,
 					TrailingStopTrigger: trailingStopTrigger,
 					TrailingStopUpdate:  trailingStopUpdate,

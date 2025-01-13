@@ -2,7 +2,7 @@
 
 package ml_stockdata
 
-// MLStockResponse 構造体の定義
-type MLStockResponse struct {
-	SymbolData []MLSymbolData // 銘柄ごとのデータリスト
+// InMLStockResponse 構造体の定義
+type InMLStockResponse struct {
+	SymbolData []InMLSymbolData // 銘柄ごとのデータリスト
 }
