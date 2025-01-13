@@ -11,7 +11,7 @@ import (
 )
 
 // CSVファイルを読み込み、データをstockdata.Data構造体のスライスに変換
-func loadCSV(filePath string) ([]ml_stockdata.MLDailyData, error) {
+func LoadCSV(filePath string) ([]ml_stockdata.MLDailyData, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -49,23 +49,18 @@ func loadCSV(filePath string) ([]ml_stockdata.MLDailyData, error) {
 		if err != nil {
 			return nil, err
 		}
-		adjClose, err := strconv.ParseFloat(record[5], 64)
-		if err != nil {
-			return nil, err
-		}
 		volume, err := strconv.ParseInt(record[6], 10, 64)
 		if err != nil {
 			return nil, err
 		}
 
 		data = append(data, ml_stockdata.MLDailyData{
-			Date:     date,
-			Open:     open,
-			High:     high,
-			Low:      low,
-			Close:    close,
-			AdjClose: adjClose,
-			Volume:   volume,
+			Date:   date,
+			Open:   open,
+			High:   high,
+			Low:    low,
+			Close:  close,
+			Volume: volume,
 		})
 	}
 	return data, nil
