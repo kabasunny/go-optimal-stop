@@ -36,8 +36,11 @@ func RunOptimization(filePath string) {
 	params.SetTrailingStop(5.0, 10.0, 1.0)
 	params.SetTrailingStopUpdate(2.0, 5.0, 1.0)
 
-	// protoResponse 内のシグナルの数を取得
-	numSignals := len(stockResponse.SymbolData[0].Signals) // 最初のシンボルのシグナル数を使用
+	// protoResponse 内の全シンボルの全シグナル数の合計を取得
+	numSignals := 0
+	for _, symbolData := range stockResponse.SymbolData {
+		numSignals += len(symbolData.Signals)
+	}
 
 	// 総試行回数を算出
 	totalTrials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates) * len(stockResponse.SymbolData) * numSignals
@@ -53,25 +56,29 @@ func RunOptimization(filePath string) {
 	optimization.PrintOverallResults(results, elapsedTime)
 
 	// 各モデルの結果を表示
-	modelNames := []string{"LightGBM", "RandomForest", "XGBoost", "CatBoost", "AdaBoost", "SVM", "KNeighbors", "LogisticRegression"}
+	modelNames := []string{"LightGBM", "RandomForest", "XGBoost", "CatBoost", "AdaBoost", "DecisionTree", "GradientBoosting", "ExtraTrees", "Bagging", "Voting", "Stacking"}
 	for _, modelName := range modelNames {
-		fmt.Printf("モデル: %s\n", modelName)
-		modelSignals := protoResponse.SymbolData[0].ModelPredictions[modelName].PredictionDates
-		stockResponse.SymbolData[0].Signals = modelSignals // モデルごとのシグナルを設定
+		if modelPredictions, ok := protoResponse.SymbolData[0].ModelPredictions[modelName]; ok && modelPredictions != nil {
+			fmt.Printf("モデル: %s\n", modelName)
+			modelSignals := modelPredictions.PredictionDates
+			stockResponse.SymbolData[0].Signals = modelSignals // モデルごとのシグナルを設定
 
-		// シグナル数を取得
-		modelSignalCount := len(modelSignals)
+			// シグナル数を取得
+			modelSignalCount := len(modelSignals)
 
-		// モデルの最適化開始時間を記録
-		modelStartTime := time.Now()
+			// モデルの最適化開始時間を記録
+			modelStartTime := time.Now()
 
-		// パラメータの最適化を再実行
-		_, _, modelResults := optimization.OptimizeParameters(&stockResponse, params)
+			// パラメータの最適化を再実行
+			_, _, modelResults := optimization.OptimizeParameters(&stockResponse, params)
 
-		// モデルの実行時間を測定
-		modelElapsedTime := time.Since(modelStartTime)
+			// モデルの実行時間を測定
+			modelElapsedTime := time.Since(modelStartTime)
 
-		// モデルごとの結果を表示
-		optimization.PrintModelResults(modelName, modelSignalCount, modelResults, modelElapsedTime)
+			// モデルごとの結果を表示
+			optimization.PrintModelResults(modelName, modelSignalCount, modelResults, modelElapsedTime)
+		} else {
+			fmt.Printf("モデル: %s の予測データが見つかりませんでした。スキップします。\n", modelName)
+		}
 	}
 }
