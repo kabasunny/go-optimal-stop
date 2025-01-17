@@ -3,6 +3,7 @@
 package trading
 
 import (
+	"fmt"
 	"go-optimal-stop/internal/ml_stockdata"
 	"time"
 )
@@ -30,25 +31,26 @@ func findExitDate(data []ml_stockdata.InMLDailyData, startDate time.Time, stopLo
 		lowPrice := day.Low
 		closePrice := day.Close
 
-		if openPrice <= stopLossThreshold {
-			endPrice = openPrice
+		// ストップロスのチェックを先に行う
+		if lowPrice <= stopLossThreshold || openPrice <= stopLossThreshold {
+			endPrice = stopLossThreshold
 			endDate = parsedDate
 			break
 		}
-		if lowPrice <= stopLossThreshold {
-			endPrice = lowPrice
-			endDate = parsedDate
-			break
-		}
+
+		// トレーリングストップのトリガーをチェック
 		if closePrice >= trailingStopTriggerPrice {
-			stopLossThreshold = round(closePrice * (1 - trailingStopUpdate/100))
 			trailingStopTriggerPrice = round(closePrice * (1 + trailingStopTrigger/100))
+			stopLossThreshold = round(closePrice * (1 - trailingStopUpdate/100))
 		}
 	}
+
 	if endDate.IsZero() {
+		// 最後のデータまで到達しても条件を満たさない場合、最終データを採用
 		endPrice = data[len(data)-1].Close
 		endDate, _ = parseDate(data[len(data)-1].Date)
 	}
+	fmt.Print(endPrice, "  ")
 	return endDate, endPrice, nil
 }
 

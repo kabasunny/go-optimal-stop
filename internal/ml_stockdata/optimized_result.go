@@ -8,6 +8,7 @@ type OptimizedResult struct {
 	TrailingStopTrigger float64
 	TrailingStopUpdate  float64
 	ProfitLoss          float64
+	WinRate             float64
 	PurchaseDate        string
 	ExitDate            string
 }

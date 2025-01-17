@@ -17,7 +17,7 @@ func OptimizeParameters(response *ml_stockdata.InMLStockResponse, params *ml_sto
 		for _, trailingStopTrigger := range params.TrailingStopTriggers {
 			for _, trailingStopUpdate := range params.TrailingStopUpdates {
 				// TradingStrategy 関数を呼び出して総利益を計算
-				totalProfitLoss, err := trading.TradingStrategy(response, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
+				totalProfitLoss, winRate, err := trading.TradingStrategy(response, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
 				if err != nil {
 					continue
 				}
@@ -26,6 +26,7 @@ func OptimizeParameters(response *ml_stockdata.InMLStockResponse, params *ml_sto
 					TrailingStopTrigger: trailingStopTrigger,
 					TrailingStopUpdate:  trailingStopUpdate,
 					ProfitLoss:          totalProfitLoss,
+					WinRate:             winRate,
 				}
 				results = append(results, result)
 			}

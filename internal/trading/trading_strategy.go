@@ -1,5 +1,3 @@
-// internal/trading/trading_strategy.go
-
 package trading
 
 import (
@@ -10,26 +8,34 @@ import (
 )
 
 // TradingStrategy 関数
-func TradingStrategy(response *ml_stockdata.InMLStockResponse, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (float64, error) {
+func TradingStrategy(response *ml_stockdata.InMLStockResponse, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (float64, float64, error) {
 	totalProfitLoss := 0.0
+	winCount := 0
+	totalCount := 0
 
 	for _, symbolData := range response.SymbolData {
 		for _, signal := range symbolData.Signals {
 			startDate, err := parseDate(signal)
 			if err != nil {
-				return 0, err
+				return 0, 0, err
 			}
 
 			// シンボルの株価データを使って最適化を実行
 			_, _, profitLoss, err := singleTradingStrategy(&symbolData.DailyData, startDate, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
 			if err != nil {
-				return 0, err
+				return 0, 0, err
 			}
+
 			totalProfitLoss += profitLoss
+			totalCount++
+			if profitLoss > 0 {
+				winCount++
+			}
 		}
 	}
 
-	return totalProfitLoss, nil
+	winRate := float64(winCount) / float64(totalCount) * 100
+	return totalProfitLoss, winRate, nil
 }
 
 // singleTradingStrategy 関数

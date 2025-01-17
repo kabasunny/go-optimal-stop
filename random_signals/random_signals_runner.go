@@ -18,7 +18,7 @@ func RunRandomSignals(csvDir string, symbols []string, numSignals int, useRandom
 
 	for i := 0; i < attempts; i++ {
 		startTime := time.Now() // 実行時間の測定開始
-		fmt.Printf("ランダム試行 %d 回目 / %d 回中\n", i, attempts)
+		fmt.Printf("ランダム試行 %d 回目 / %d 回中\n", i+1, attempts)
 		if useRandomSeed {
 			// 完全にランダムにシグナルを生成
 			stockResponse, err = createStockResponse(csvDir, symbols, numSignals)

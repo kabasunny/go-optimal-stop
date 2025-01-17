@@ -24,14 +24,14 @@ func main() {
 	if !*useRandom {
 		fmt.Printf("学習モデルのシグナルで検証\n")
 
-		filePath := "data/ml_stock_response/2025-01-17_11-12-14.bin"
+		filePath := "data/ml_stock_response/2025-01-17_16-52-09.bin"
 		experiment_proto.RunOptimization(filePath, params)
 	} else {
 		fmt.Printf("ランダムにシグナルを作成し、結果を確認\n")
 
 		csvDir := "../opti-ml-py/data/stock_data/formated_raw/2025-01-17"
-		symbols := []string{"7203", "7267"}
-		numSignals := 60 * len(symbols)
+		symbols := []string{"7203"} //, "7267"}
+		numSignals := 60
 		// フラグを定義
 		useRandomSeed := true // trueはランダム値、falseは固定値
 		attempts := 10        // useRandomSeed := true の時、ランダム値試行を繰り返す回数

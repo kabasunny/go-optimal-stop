@@ -24,5 +24,6 @@ func generateRandomSignals(data []ml_stockdata.InMLDailyData, numSignals int, se
 	for i := 0; i < numSignals && i < len(shuffledData); i++ {
 		signals = append(signals, shuffledData[i].Date)
 	}
+
 	return signals
 }
