@@ -50,7 +50,7 @@ func findExitDate(data []ml_stockdata.InMLDailyData, startDate time.Time, stopLo
 		endPrice = data[len(data)-1].Close
 		endDate, _ = parseDate(data[len(data)-1].Date)
 	}
-	fmt.Print(endPrice, "  ")
+	fmt.Print(startDate, " ", endDate, " ", endPrice, "  ")
 	return endDate, endPrice, nil
 }
 
