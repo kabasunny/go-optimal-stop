@@ -11,7 +11,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func RunOptimization(filePath string) {
+func RunOptimization(filePath string, params *ml_stockdata.Parameters) {
 	startTime := time.Now() // 実行時間の測定開始
 
 	// ファイルを読み込み、stockResponseにプロトコルバッファバイナリからデータをマッピング
@@ -30,12 +30,6 @@ func RunOptimization(filePath string) {
 	// プロトコルバッファから内部MLStockResponse型への変換
 	stockResponse := ConvertProtoToInternal(&protoResponse)
 
-	// Parameters構造体を作成し、関数を使ってパラメータを設定
-	params := ml_stockdata.Parameters{}
-	params.SetStopLoss(2.0, 5.0, 1.0)
-	params.SetTrailingStop(5.0, 10.0, 1.0)
-	params.SetTrailingStopUpdate(2.0, 5.0, 1.0)
-
 	// protoResponse 内の全シンボルの全シグナル数の合計を取得
 	numSignals := 0
 	for _, symbolData := range stockResponse.SymbolData {
@@ -44,7 +38,7 @@ func RunOptimization(filePath string) {
 
 	// 総試行回数を算出
 	totalTrials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates) * len(stockResponse.SymbolData) * numSignals
-	fmt.Printf("総試行回数: %d, シグナル数: %d\n", totalTrials, numSignals)
+	fmt.Printf("サーチ回数/試行: %d, シグナル数: %d\n", totalTrials, numSignals)
 
 	// パラメータの最適化を実行
 	_, _, results := optimization.OptimizeParameters(&stockResponse, params)
@@ -53,15 +47,21 @@ func RunOptimization(filePath string) {
 	elapsedTime := time.Since(startTime)
 
 	// 結果を表示
-	optimization.PrintOverallResults(results, elapsedTime)
+	optimization.PrintResults(results, elapsedTime)
 
-	// 各モデルの結果を表示
-	modelNames := []string{"LightGBM", "RandomForest", "XGBoost", "CatBoost", "AdaBoost", "DecisionTree", "GradientBoosting", "ExtraTrees", "Bagging", "Voting", "Stacking"}
+	// ここから各モデルの結果を表示するためのループを追加
+	modelNames := []string{
+		"LightGBM", "RandomForest", "XGBoost", "CatBoost", "AdaBoost",
+		"DecisionTree", "GradientBoosting", "ExtraTrees", "Bagging", "Voting", "Stacking",
+	}
 	for _, modelName := range modelNames {
+		// モデルの予測データを取得
 		if modelPredictions, ok := protoResponse.SymbolData[0].ModelPredictions[modelName]; ok && modelPredictions != nil {
-			fmt.Printf("モデル: %s\n", modelName)
+			// モデルごとのシグナルを設定
 			modelSignals := modelPredictions.PredictionDates
-			stockResponse.SymbolData[0].Signals = modelSignals // モデルごとのシグナルを設定
+			// シグナルを設定する前に元のシグナルを保存しておく（他のモデルで使うため）
+			originalSignals := stockResponse.SymbolData[0].Signals
+			stockResponse.SymbolData[0].Signals = modelSignals
 
 			// シグナル数を取得
 			modelSignalCount := len(modelSignals)
@@ -76,7 +76,10 @@ func RunOptimization(filePath string) {
 			modelElapsedTime := time.Since(modelStartTime)
 
 			// モデルごとの結果を表示
-			optimization.PrintModelResults(modelName, modelSignalCount, modelResults, modelElapsedTime)
+			optimization.PrintResults(modelResults, modelElapsedTime, optimization.WithModelName(modelName), optimization.WithSignalCount(modelSignalCount))
+
+			// 元のシグナルに戻す
+			stockResponse.SymbolData[0].Signals = originalSignals
 		} else {
 			fmt.Printf("モデル: %s の予測データが見つかりませんでした。スキップします。\n", modelName)
 		}
