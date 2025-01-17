@@ -5,6 +5,6 @@ import (
 )
 
 func main() {
-	filePath := "data/ml_stock_response/7203_2025-01-15.bin"
+	filePath := "data/ml_stock_response/2025-01-17_11-12-14.bin"
 	experiment_proto.RunOptimization(filePath)
 }
