@@ -24,7 +24,7 @@ func main() {
 	if !*useRandom {
 		fmt.Printf("学習モデルのシグナルで検証\n")
 
-		filePath := "data/ml_stock_response/2025-01-17_16-52-09.bin"
+		filePath := "data/ml_stock_response/latest_response.bin"
 		experiment_proto.RunOptimization(filePath, params)
 	} else {
 		fmt.Printf("ランダムにシグナルを作成し、結果を確認\n")
