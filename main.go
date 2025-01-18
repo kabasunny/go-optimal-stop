@@ -29,10 +29,10 @@ func main() {
 	} else {
 		fmt.Printf("ランダムにシグナルを作成し、結果を確認\n")
 
-		csvDir := "../opti-ml-py/data/stock_data/formated_raw/2025-01-17"
+		csvDir := "../opti-ml-py/data/stock_data/formated_raw/2025-01-18"
 		// csvDir := "."
-		symbols := []string{"7203", "7267"}
-		numSignals := 447
+		symbols := []string{"1570"}
+		numSignals := 300
 		// フラグを定義
 		useRandomSeed := true // trueはランダム値、falseは固定値
 		attempts := 5         // useRandomSeed := true の時、ランダム値試行を繰り返す回数

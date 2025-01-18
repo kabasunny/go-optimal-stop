@@ -37,8 +37,9 @@ func RunOptimization(filePath string, params *ml_stockdata.Parameters) {
 	}
 
 	// 総試行回数を算出
-	totalTrials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates) * len(stockResponse.SymbolData) * numSignals
-	fmt.Printf("サーチ回数/試行: %d, シグナル数: %d\n", totalTrials, numSignals)
+	traials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates) * len(stockResponse.SymbolData)
+	totalTrials := traials * numSignals
+	fmt.Printf("試行回数: %d, シグナル数: %d, 総試行回数: %d\n", traials, numSignals, totalTrials)
 
 	// パラメータの最適化を実行
 	_, _, results := optimization.OptimizeParameters(&stockResponse, params)
