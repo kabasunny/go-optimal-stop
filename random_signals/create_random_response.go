@@ -35,6 +35,9 @@ func createStockResponse(csvDir string, symbols []string, numSignals int, seed .
 			Signals:   signals,
 		}
 		symbolDataList = append(symbolDataList, symbolData)
+
+		// デバッグ情報を表示
+		// fmt.Printf("Symbol: %s, DailyData: %v, Signals: %v\n", symbolData.Symbol, symbolData.DailyData, symbolData.Signals)
 	}
 
 	// StockResponse構造体を作成

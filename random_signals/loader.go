@@ -29,20 +29,20 @@ func loadCSV(filePath string) ([]ml_stockdata.InMLDailyData, error) {
 			continue
 		}
 
-		date := record[1] // 日付がインデックス1にある
-		open, err := strconv.ParseFloat(record[2], 64)
+		date := record[1]                              // 日付がインデックス1にある
+		open, err := strconv.ParseFloat(record[3], 64) // 修正: 開始価格はインデックス3
 		if err != nil {
 			return nil, err
 		}
-		high, err := strconv.ParseFloat(record[3], 64)
+		high, err := strconv.ParseFloat(record[4], 64)
 		if err != nil {
 			return nil, err
 		}
-		low, err := strconv.ParseFloat(record[4], 64)
+		low, err := strconv.ParseFloat(record[5], 64)
 		if err != nil {
 			return nil, err
 		}
-		close, err := strconv.ParseFloat(record[5], 64)
+		close, err := strconv.ParseFloat(record[6], 64)
 		if err != nil {
 			return nil, err
 		}
@@ -50,6 +50,10 @@ func loadCSV(filePath string) ([]ml_stockdata.InMLDailyData, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		// // デバッグ情報を追加
+		// fmt.Printf("Date: %s, Open: %.2f, High: %.2f, Low: %.2f, Close: %.2f, Volume: %d\n",
+		// 	date, open, high, low, close, volume)
 
 		data = append(data, ml_stockdata.InMLDailyData{
 			Date:   date,

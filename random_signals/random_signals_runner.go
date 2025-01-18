@@ -32,6 +32,7 @@ func RunRandomSignals(csvDir string, symbols []string, numSignals int, useRandom
 			fmt.Printf("StockResponseの作成エラー: %v\n", err)
 			return
 		}
+		// fmt.Print(stockResponse)
 
 		// 総試行回数を算出
 		totalTrials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates) * len(stockResponse.SymbolData) * numSignals

@@ -3,15 +3,25 @@
 package trading
 
 import (
-	"fmt"
 	"go-optimal-stop/internal/ml_stockdata"
 	"time"
 )
 
+// round 関数: 四捨五入
+func round(value float64, isProfit bool) float64 {
+	if isProfit {
+		// 利益の場合は切り捨て
+		return float64(int(value*10)) / 10
+	} else {
+		// 損失の場合は切り上げ
+		return float64(int(value*10+1)) / 10
+	}
+}
+
 // calculateStopLoss 関数: 損切りしきい値とトリガー価格を計算
 func calculateStopLoss(purchasePrice, stopLossPercentage, trailingStopTrigger float64) (float64, float64) {
-	stopLossThreshold := round(purchasePrice * (1 - stopLossPercentage/100))
-	trailingStopTriggerPrice := round(purchasePrice * (1 + trailingStopTrigger/100))
+	stopLossThreshold := round(purchasePrice*(1-stopLossPercentage/100), false)
+	trailingStopTriggerPrice := round(purchasePrice*(1+trailingStopTrigger/100), true)
 	return stopLossThreshold, trailingStopTriggerPrice
 }
 
@@ -40,9 +50,17 @@ func findExitDate(data []ml_stockdata.InMLDailyData, startDate time.Time, stopLo
 
 		// トレーリングストップのトリガーをチェック
 		if closePrice >= trailingStopTriggerPrice {
-			trailingStopTriggerPrice = round(closePrice * (1 + trailingStopTrigger/100))
-			stopLossThreshold = round(closePrice * (1 - trailingStopUpdate/100))
+			trailingStopTriggerPrice = round(closePrice*(1+trailingStopTrigger/100), true)
+			stopLossThreshold = round(closePrice*(1-trailingStopUpdate/100), false)
+
+			// ストップロスの再確認
+			if lowPrice <= stopLossThreshold || openPrice <= stopLossThreshold {
+				endPrice = stopLossThreshold
+				endDate = parsedDate
+				break
+			}
 		}
+
 	}
 
 	if endDate.IsZero() {
@@ -50,11 +68,5 @@ func findExitDate(data []ml_stockdata.InMLDailyData, startDate time.Time, stopLo
 		endPrice = data[len(data)-1].Close
 		endDate, _ = parseDate(data[len(data)-1].Date)
 	}
-	fmt.Print(startDate, " ", endDate, " ", endPrice, "  ")
 	return endDate, endPrice, nil
-}
-
-// round 関数: 四捨五入
-func round(value float64) float64 {
-	return float64(int(value*10+0.5)) / 10
 }
