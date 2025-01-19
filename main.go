@@ -1,5 +1,4 @@
 // main.go
-
 package main
 
 import (
@@ -29,10 +28,16 @@ func main() {
 	} else {
 		fmt.Printf("ランダムにシグナルを作成し、結果を確認\n")
 
-		csvDir := "../opti-ml-py/data/stock_data/formated_raw/2025-01-18"
-		// csvDir := "."
-		symbols := []string{"1570"}
-		numSignals := 300
+		csvDir := "../opti-ml-py/data/stock_data/formated_raw/2025-01-19"
+		getSymbolsDir := "../opti-ml-py/data/stock_data/real_predictions/2025-01-19"
+		symbols, err := random_signals.GetSymbolsFromCSVFiles(getSymbolsDir)
+		if err != nil {
+			fmt.Printf("Failed to get symbols from CSV files: %v\n", err)
+			return
+		}
+		fmt.Printf("Symbols: %v\n", symbols)
+
+		numSignals := 4222
 		// フラグを定義
 		useRandomSeed := true // trueはランダム値、falseは固定値
 		attempts := 5         // useRandomSeed := true の時、ランダム値試行を繰り返す回数

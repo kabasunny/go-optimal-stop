@@ -30,6 +30,13 @@ func RunOptimization(filePath string, params *ml_stockdata.Parameters) {
 	// プロトコルバッファから内部MLStockResponse型への変換
 	stockResponse := ConvertProtoToInternal(&protoResponse)
 
+	// protoResponse 内のシンボルのリストを表示
+	var symbols []string
+	for _, symbolData := range protoResponse.GetSymbolData() {
+		symbols = append(symbols, symbolData.Symbol)
+	}
+	fmt.Printf("Symbols: %v\n", symbols)
+
 	// protoResponse 内の全シンボルの全シグナル数の合計を取得
 	numSignals := 0
 	for _, symbolData := range stockResponse.SymbolData {
@@ -37,9 +44,9 @@ func RunOptimization(filePath string, params *ml_stockdata.Parameters) {
 	}
 
 	// 総試行回数を算出
-	traials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates) * len(stockResponse.SymbolData)
-	totalTrials := traials * numSignals
-	fmt.Printf("試行回数: %d, シグナル数: %d, 総試行回数: %d\n", traials, numSignals, totalTrials)
+	trials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates) * len(stockResponse.SymbolData)
+	totalTrials := trials * numSignals
+	fmt.Printf("試行回数: %d, シグナル数: %d, 総試行回数: %d\n", trials, numSignals, totalTrials)
 
 	// パラメータの最適化を実行
 	_, _, results := optimization.OptimizeParameters(&stockResponse, params)
