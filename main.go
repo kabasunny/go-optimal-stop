@@ -28,8 +28,8 @@ func main() {
 	} else {
 		fmt.Printf("ランダムにシグナルを作成し、結果を確認\n")
 
-		csvDir := "../opti-ml-py/data/stock_data/formated_raw/2025-01-19"
-		getSymbolsDir := "../opti-ml-py/data/stock_data/real_predictions/2025-01-19"
+		csvDir := "../py-signal-buy/data/stock_data/formated_raw/2025-01-19"
+		getSymbolsDir := "../py-signal-buy/data/stock_data/predictions/2025-01-19"
 		symbols, err := random_signals.GetSymbolsFromCSVFiles(getSymbolsDir)
 		if err != nil {
 			fmt.Printf("Failed to get symbols from CSV files: %v\n", err)
@@ -37,7 +37,7 @@ func main() {
 		}
 		fmt.Printf("Symbols: %v\n", symbols)
 
-		numSignals := 4222
+		numSignals := 96
 		// フラグを定義
 		useRandomSeed := true // trueはランダム値、falseは固定値
 		attempts := 5         // useRandomSeed := true の時、ランダム値試行を繰り返す回数
