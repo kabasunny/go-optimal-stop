@@ -7,6 +7,7 @@ import (
 	"go-optimal-stop/experiment_proto"
 	"go-optimal-stop/internal/ml_stockdata"
 	"go-optimal-stop/random_signals"
+	"time"
 )
 
 func main() {
@@ -28,8 +29,8 @@ func main() {
 	} else {
 		fmt.Printf("ランダムにシグナルを作成し、結果を確認\n")
 
-		csvDir := "../py-signal-buy/data/stock_data/formated_raw/2025-01-19"
-		getSymbolsDir := "../py-signal-buy/data/stock_data/predictions/2025-01-19"
+		csvDir := "../py-signal-buy/data/stock_data/formated_raw/2025-01-21"
+		getSymbolsDir := "../py-signal-buy/data/stock_data/predictions/2025-01-21"
 		symbols, err := random_signals.GetSymbolsFromCSVFiles(getSymbolsDir)
 		if err != nil {
 			fmt.Printf("Failed to get symbols from CSV files: %v\n", err)
@@ -37,11 +38,16 @@ func main() {
 		}
 		fmt.Printf("Symbols: %v\n", symbols)
 
-		numSignals := 96
+		numSignals := 536
 		// フラグを定義
 		useRandomSeed := true // trueはランダム値、falseは固定値
 		attempts := 5         // useRandomSeed := true の時、ランダム値試行を繰り返す回数
-		random_signals.RunRandomSignals(csvDir, symbols, numSignals, useRandomSeed, attempts, params)
+
+		// 本日の日付を取得し、365*2 さかのぼる
+		today := time.Now()
+		startDate := today.AddDate(-2, 0, 0).Format("2006-01-02")
+
+		random_signals.RunRandomSignals(csvDir, symbols, numSignals, useRandomSeed, attempts, params, startDate)
 	}
 }
 

@@ -5,10 +5,11 @@ import (
 	"go-optimal-stop/internal/ml_stockdata"
 	"os"
 	"strconv"
+	"time"
 )
 
 // CSVファイルを読み込み、データをstockdata.Data構造体のスライスに変換
-func loadCSV(filePath string) ([]ml_stockdata.InMLDailyData, error) {
+func loadCSV(filePath string, startDate string) ([]ml_stockdata.InMLDailyData, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -22,6 +23,12 @@ func loadCSV(filePath string) ([]ml_stockdata.InMLDailyData, error) {
 		return nil, err
 	}
 
+	// 基準の日付をパース
+	startDateTime, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		return nil, err
+	}
+
 	var data []ml_stockdata.InMLDailyData
 	for i, record := range records {
 		// ヘッダー行をスキップ
@@ -29,7 +36,19 @@ func loadCSV(filePath string) ([]ml_stockdata.InMLDailyData, error) {
 			continue
 		}
 
-		date := record[1]                              // 日付がインデックス1にある
+		date := record[1] // 日付がインデックス1にある
+
+		// 日付をパース
+		recordDate, err := time.Parse("2006-01-02", date)
+		if err != nil {
+			return nil, err
+		}
+
+		// 基準の日付以降のデータのみを追加
+		if recordDate.Before(startDateTime) {
+			continue
+		}
+
 		open, err := strconv.ParseFloat(record[3], 64) // 修正: 開始価格はインデックス3
 		if err != nil {
 			return nil, err
@@ -50,10 +69,6 @@ func loadCSV(filePath string) ([]ml_stockdata.InMLDailyData, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		// // デバッグ情報を追加
-		// fmt.Printf("Date: %s, Open: %.2f, High: %.2f, Low: %.2f, Close: %.2f, Volume: %d\n",
-		// 	date, open, high, low, close, volume)
 
 		data = append(data, ml_stockdata.InMLDailyData{
 			Date:   date,

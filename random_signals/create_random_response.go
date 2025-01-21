@@ -7,14 +7,14 @@ import (
 )
 
 // CSVファイルからデータを読み込み、StockResponse構造体を作成
-func createStockResponse(csvDir string, symbols []string, numSignals int, seed ...int64) (ml_stockdata.InMLStockResponse, error) {
+func createStockResponse(csvDir string, symbols []string, numSignals int, startDate string, seed ...int64) (ml_stockdata.InMLStockResponse, error) {
 	var symbolDataList []ml_stockdata.InMLSymbolData
 
 	for _, symbol := range symbols {
 		filePath := fmt.Sprintf("%s/%s.csv", csvDir, symbol)
 
 		// CSVファイルを読み込み
-		data, err := loadCSV(filePath)
+		data, err := loadCSV(filePath, startDate)
 
 		if err != nil {
 			return ml_stockdata.InMLStockResponse{}, fmt.Errorf("CSVファイルの読み込みエラー: %v", err)
