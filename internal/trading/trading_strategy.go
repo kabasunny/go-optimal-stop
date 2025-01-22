@@ -1,92 +1,69 @@
 package trading
 
 import (
-	"errors"
-	"time"
+	"sort"
+	"sync"
 
 	"go-optimal-stop/internal/ml_stockdata"
 )
 
-// TradingStrategy 関数
+// TradingStrategy 関数は、与えられた株価データとトレーディングパラメータに基づいて総利益、勝率、最大ポジティブストリーク、最大ネガティブストリークを返す
 func TradingStrategy(response *ml_stockdata.InMLStockResponse, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (float64, float64, float64, float64, error) {
-	totalProfitLoss := 0.0
-	winCount := 0
-	totalCount := 0
-	currentPositiveStreak := 0.0
-	maxPositiveStreak := 0.0
-	currentNegativeStreak := 0.0
-	maxNegativeStreak := 0.0
+	totalProfitLoss := 0.0         // 全体の利益を追跡
+	winCount := 0                  // 勝ちトレードのカウント
+	totalCount := 0                // 全トレードのカウント
+	var tradeResults []tradeResult // トレード結果を保持するスライス
+	var mu sync.Mutex              // 排他制御用のミューテックス
+	var wg sync.WaitGroup          // 同期用のWaitGroup
 
+	// 各シンボルデータをループ処理
 	for _, symbolData := range response.SymbolData {
+		// 各シグナルをループ処理
 		for _, signal := range symbolData.Signals {
-			startDate, err := parseDate(signal)
-			if err != nil {
-				return 0, 0, 0, 0, err
-			}
-
-			// シンボルの株価データを使って最適化を実行
-			_, _, profitLoss, _, _, err := singleTradingStrategy(&symbolData.DailyData, startDate, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
-			if err != nil {
-				return 0, 0, 0, 0, err
-			}
-
-			totalProfitLoss += profitLoss
-			totalCount++
-
-			if profitLoss > 0 {
-				winCount++
-				currentPositiveStreak += profitLoss
-				if currentPositiveStreak > maxPositiveStreak {
-					maxPositiveStreak = currentPositiveStreak
+			wg.Add(1) // WaitGroupのカウントをインクリメント
+			go func(symbolData ml_stockdata.InMLSymbolData, signal string) {
+				defer wg.Done()                     // 処理終了時にWaitGroupのカウントをデクリメント
+				startDate, err := parseDate(signal) // シグナルの日付を解析
+				if err != nil {
+					return
 				}
-				currentNegativeStreak = 0 // 負の連続をリセット
-			} else {
-				currentNegativeStreak += profitLoss
-				if currentNegativeStreak < maxNegativeStreak {
-					maxNegativeStreak = currentNegativeStreak
+
+				// トレード戦略を実行し、利益を計算
+				_, _, profitLoss, _, _, err := singleTradingStrategy(&symbolData.DailyData, startDate, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
+				if err != nil {
+					return
 				}
-				currentPositiveStreak = 0 // 正の連続をリセット
-			}
+				mu.Lock()                     // 排他制御開始
+				totalProfitLoss += profitLoss // 総利益に加算
+				totalCount++                  // トレード数をインクリメント
+				if profitLoss > 0 {
+					winCount++ // 勝ちトレードの場合、勝ち数をインクリメント
+				}
+				// トレード結果をスライスに追加
+				tradeResults = append(tradeResults, tradeResult{
+					Symbol:     symbolData.Symbol,
+					Date:       startDate,
+					ProfitLoss: profitLoss,
+				})
+				mu.Unlock() // 排他制御終了
+			}(symbolData, signal)
 		}
 	}
 
+	wg.Wait() // すべてのGoルーチンの終了を待機
+
+	// トレード結果をシンボルと日付でソート
+	sort.Slice(tradeResults, func(i, j int) bool {
+		if tradeResults[i].Symbol == tradeResults[j].Symbol {
+			return tradeResults[i].Date.Before(tradeResults[j].Date)
+		}
+		return tradeResults[i].Symbol < tradeResults[j].Symbol
+	})
+
+	// 最大ポジティブストリークと最大ネガティブストリークを計算
+	maxPositiveStreak, maxNegativeStreak := calculateStreaks(tradeResults)
+
+	// 勝率を計算
 	winRate := float64(winCount) / float64(totalCount) * 100
 	return totalProfitLoss, winRate, maxPositiveStreak, maxNegativeStreak, nil
-}
-
-// singleTradingStrategy 関数
-func singleTradingStrategy(data *[]ml_stockdata.InMLDailyData, startDate time.Time, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (time.Time, time.Time, float64, float64, float64, error) {
-	d := *data
-	if len(d) == 0 {
-		return time.Time{}, time.Time{}, 0, 0, 0, errors.New("データが空です")
-	}
-
-	maxDate, err := parseDate(d[len(d)-1].Date)
-	if err != nil {
-		return time.Time{}, time.Time{}, 0, 0, 0, err
-	}
-
-	for !dateInData(d, startDate) {
-		if startDate.After(maxDate) {
-			return time.Time{}, time.Time{}, 0, 0, 0, errors.New("開始日がデータの範囲外です。無限ループを防ぐため、処理を中断")
-		}
-		startDate = startDate.AddDate(0, 0, 1)
-	}
-
-	purchaseDate, purchasePrice, err := findPurchaseDate(d, startDate)
-	if err != nil {
-		return time.Time{}, time.Time{}, 0, 0, 0, err
-	}
-
-	stopLossThreshold, trailingStopTriggerPrice := calculateStopLoss(purchasePrice, stopLossPercentage, trailingStopTrigger)
-
-	endDate, endPrice, err := findExitDate(d, startDate, stopLossThreshold, trailingStopTriggerPrice, trailingStopTrigger, trailingStopUpdate)
-	if err != nil {
-		return time.Time{}, time.Time{}, 0, 0, 0, err
-	}
-
-	profitLoss := (endPrice - purchasePrice) / purchasePrice * 100
-	isProfit := profitLoss > 0
-	profitLoss = round(profitLoss, isProfit)
-	return purchaseDate, endDate, profitLoss, purchasePrice, endPrice, nil
 }
