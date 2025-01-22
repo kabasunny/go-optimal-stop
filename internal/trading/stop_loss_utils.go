@@ -48,17 +48,17 @@ func findExitDate(data []ml_stockdata.InMLDailyData, startDate time.Time, stopLo
 			break
 		}
 
-		// トレーリングストップのトリガーをチェック
+		// トレーリングストップのトリガーをチェック　終値ベースで判断している…高値とするか検討は別途
 		if closePrice >= trailingStopTriggerPrice {
 			trailingStopTriggerPrice = round(closePrice*(1+trailingStopTrigger/100), true)
 			stopLossThreshold = round(closePrice*(1-trailingStopUpdate/100), false)
 
-			// ストップロスの再確認
-			if lowPrice <= stopLossThreshold || openPrice <= stopLossThreshold {
-				endPrice = stopLossThreshold
-				endDate = parsedDate
-				break
-			}
+			// ストップロスの再確認 …これは意味がないか？少なくともTSTを当日高値に設定している場合は、意味があると考える
+			// if closePrice <= stopLossThreshold || openPrice <= stopLossThreshold {
+			// 	endPrice = stopLossThreshold
+			// 	endDate = parsedDate
+			// 	break
+			// }
 		}
 
 	}

@@ -1,12 +1,12 @@
-package experiment_proto
+package optimization
 
 import (
 	"fmt"
 	"os"
 	"time"
 
+	"go-optimal-stop/experiment_proto"
 	"go-optimal-stop/internal/ml_stockdata"
-	"go-optimal-stop/optimization"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -21,14 +21,14 @@ func RunOptimization(filePath string, params *ml_stockdata.Parameters) {
 		return
 	}
 
-	var protoResponse MLStockResponse
+	var protoResponse experiment_proto.MLStockResponse
 	if err := proto.Unmarshal(data, &protoResponse); err != nil {
 		fmt.Printf("プロトコルバッファのアンマーシャルエラー: %v\n", err)
 		return
 	}
 
 	// プロトコルバッファから内部MLStockResponse型への変換
-	stockResponse := ConvertProtoToInternal(&protoResponse)
+	stockResponse := experiment_proto.ConvertProtoToInternal(&protoResponse)
 
 	// protoResponse 内のシンボルのリストを表示
 	var symbols []string
@@ -46,22 +46,21 @@ func RunOptimization(filePath string, params *ml_stockdata.Parameters) {
 	// 総試行回数を算出
 	trials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates) * len(stockResponse.SymbolData)
 	totalTrials := trials * numSignals
-	fmt.Printf("試行回数: %d, シグナル数: %d, 総試行回数: %d\n", trials, numSignals, totalTrials)
+	fmt.Printf("パラメタ組合せ: %d, 正解ラベル数: %d, 総試行回数: %d\n", trials, numSignals, totalTrials)
 
 	// パラメータの最適化を実行
-	_, _, results := optimization.OptimizeParameters(&stockResponse, params)
+	_, _, results := OptimizeParameters(&stockResponse, params)
 
 	// 実行時間を測定
 	elapsedTime := time.Since(startTime)
 
 	// 結果を表示
-	optimization.PrintResults(results, elapsedTime)
+	PrintResults(results, elapsedTime)
 
-	// ここから各モデルの結果を表示するためのループを追加
-	modelNames := []string{
-		"LightGBM", "RandomForest", "XGBoost", "CatBoost", "AdaBoost",
-		"DecisionTree", "GradientBoosting", "ExtraTrees", "Bagging", "Voting", "Stacking",
-	}
+	// モデル名をmodel_predictionsフィールドから自動抽出
+	modelNames := extractModelNames(&protoResponse)
+	fmt.Printf("シミュレーションモデル名: %v\n", modelNames)
+
 	for _, modelName := range modelNames {
 		// モデルの予測データを取得
 		if modelPredictions, ok := protoResponse.SymbolData[0].ModelPredictions[modelName]; ok && modelPredictions != nil {
@@ -78,13 +77,13 @@ func RunOptimization(filePath string, params *ml_stockdata.Parameters) {
 			modelStartTime := time.Now()
 
 			// パラメータの最適化を再実行
-			_, _, modelResults := optimization.OptimizeParameters(&stockResponse, params)
+			_, _, modelResults := OptimizeParameters(&stockResponse, params)
 
 			// モデルの実行時間を測定
 			modelElapsedTime := time.Since(modelStartTime)
 
 			// モデルごとの結果を表示
-			optimization.PrintResults(modelResults, modelElapsedTime, optimization.WithModelName(modelName), optimization.WithSignalCount(modelSignalCount))
+			PrintResults(modelResults, modelElapsedTime, WithModelName(modelName), WithSignalCount(modelSignalCount))
 
 			// 元のシグナルに戻す
 			stockResponse.SymbolData[0].Signals = originalSignals

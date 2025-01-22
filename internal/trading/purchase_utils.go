@@ -9,7 +9,6 @@ import (
 )
 
 // findPurchaseDate 関数: 購入日を見つける
-// findPurchaseDate 関数: 購入日を見つける
 func findPurchaseDate(data []ml_stockdata.InMLDailyData, startDate time.Time) (time.Time, float64, error) {
 	for _, day := range data {
 		parsedDate, err := parseDate(day.Date)

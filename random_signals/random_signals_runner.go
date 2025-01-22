@@ -10,7 +10,7 @@ import (
 	"go-optimal-stop/optimization"
 )
 
-func RunRandomSignals(csvDir string, symbols []string, numSignals int, useRandomSeed bool, attempts int, params *ml_stockdata.Parameters) {
+func RunRandomSignals(csvDir string, symbols []string, numSignals int, useRandomSeed bool, attempts int, params *ml_stockdata.Parameters, startDate string) {
 
 	var stockResponse ml_stockdata.InMLStockResponse
 	var err error
@@ -21,11 +21,11 @@ func RunRandomSignals(csvDir string, symbols []string, numSignals int, useRandom
 		fmt.Printf("ランダム試行 %d 回目 / %d 回中\n", i+1, attempts)
 		if useRandomSeed {
 			// 完全にランダムにシグナルを生成
-			stockResponse, err = createStockResponse(csvDir, symbols, numSignals)
+			stockResponse, err = createStockResponse(csvDir, symbols, numSignals, startDate)
 
 		} else {
 			// 固定シードを使用してシグナルを生成
-			stockResponse, err = createStockResponse(csvDir, symbols, numSignals, seed)
+			stockResponse, err = createStockResponse(csvDir, symbols, numSignals, startDate, seed)
 		}
 
 		if err != nil {
