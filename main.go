@@ -25,7 +25,7 @@ func main() {
 	if !*useRandom {
 		fmt.Printf("学習モデルのシグナルで検証\n")
 
-		filePath := "data/ml_stock_response/proto_kmeans-cluster_label_0.bin"
+		filePath := "../py-signal-buy/result/ml_stock_response/proto_kmeans-cluster_label_0.bin"
 		optimization.RunOptimization(filePath, params)
 	} else {
 		fmt.Printf("ランダムにシグナルを作成し、結果を確認\n")
