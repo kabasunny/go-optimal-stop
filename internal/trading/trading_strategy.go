@@ -1,10 +1,10 @@
 package trading
 
 import (
-	"sort"
-	"sync"
-
+	"fmt"
 	"go-optimal-stop/internal/ml_stockdata"
+	"sort"
+	"time"
 )
 
 // TradingStrategy 関数は、与えられた株価データとトレーディングパラメータに基づいて総利益、勝率、最大ポジティブストリーク、最大ネガティブストリークを返す
@@ -13,44 +13,55 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, stopLossPercentag
 	winCount := 0                  // 勝ちトレードのカウント
 	totalCount := 0                // 全トレードのカウント
 	var tradeResults []tradeResult // トレード結果を保持するスライス
-	var mu sync.Mutex              // 排他制御用のミューテックス
-	var wg sync.WaitGroup          // 同期用のWaitGroup
+
+	// continue した日付を記録するリスト
+	var skippedDates []time.Time
+	var totalSignals int
 
 	// 各シンボルデータをループ処理
 	for _, symbolData := range response.SymbolData {
+		previousEndDate := time.Time{} // 前回の終了日を記録する変数
+
 		// 各シグナルをループ処理
 		for _, signal := range symbolData.Signals {
-			wg.Add(1) // WaitGroupのカウントをインクリメント
-			go func(symbolData ml_stockdata.InMLSymbolData, signal string) {
-				defer wg.Done()                     // 処理終了時にWaitGroupのカウントをデクリメント
-				startDate, err := parseDate(signal) // シグナルの日付を解析
-				if err != nil {
-					return
-				}
+			totalSignals++ // シグナルの総数をカウント
 
-				// トレード戦略を実行し、利益を計算
-				_, _, profitLoss, _, _, err := singleTradingStrategy(&symbolData.DailyData, startDate, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
-				if err != nil {
-					return
-				}
-				mu.Lock()                     // 排他制御開始
-				totalProfitLoss += profitLoss // 総利益に加算
-				totalCount++                  // トレード数をインクリメント
-				if profitLoss > 0 {
-					winCount++ // 勝ちトレードの場合、勝ち数をインクリメント
-				}
-				// トレード結果をスライスに追加
-				tradeResults = append(tradeResults, tradeResult{
-					Symbol:     symbolData.Symbol,
-					Date:       startDate,
-					ProfitLoss: profitLoss,
-				})
-				mu.Unlock() // 排他制御終了
-			}(symbolData, signal)
+			startDate, err := parseDate(signal) // シグナルの日付を解析
+			if err != nil {
+				skippedDates = append(skippedDates, startDate)
+				continue
+			}
+
+			// 前回の終了日と開始日が重なる場合、次の開始日に移る
+			if !previousEndDate.IsZero() && startDate.Before(previousEndDate) {
+				skippedDates = append(skippedDates, startDate)
+				continue
+			}
+
+			// トレード戦略を実行し、利益を計算
+			purchaseDate, endDate, profitLoss, _, _, err := singleTradingStrategy(&symbolData.DailyData, startDate, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
+			if err != nil {
+				skippedDates = append(skippedDates, startDate)
+				continue
+			}
+
+			totalProfitLoss += profitLoss // 総利益に加算
+			totalCount++                  // トレード数をインクリメント
+			if profitLoss > 0 {
+				winCount++ // 勝ちトレードの場合、勝ち数をインクリメント
+			}
+
+			// トレード結果をスライスに追加
+			tradeResults = append(tradeResults, tradeResult{
+				Symbol:     symbolData.Symbol,
+				Date:       purchaseDate,
+				ProfitLoss: profitLoss,
+			})
+
+			// 前回の終了日を更新
+			previousEndDate = endDate
 		}
 	}
-
-	wg.Wait() // すべてのGoルーチンの終了を待機
 
 	// トレード結果をシンボルと日付でソート
 	sort.Slice(tradeResults, func(i, j int) bool {
@@ -65,5 +76,10 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, stopLossPercentag
 
 	// 勝率を計算
 	winRate := float64(winCount) / float64(totalCount) * 100
+
+	// スキップしたシグナルの個数を表示
+	skippedCount := len(skippedDates)
+	fmt.Printf("Total Signals: %d, Skipped Signals: %d, Processed Signals: %d\n", totalSignals, skippedCount, totalSignals-skippedCount)
+
 	return totalProfitLoss, winRate, maxPositiveStreak, maxNegativeStreak, nil
 }

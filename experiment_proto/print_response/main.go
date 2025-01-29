@@ -14,7 +14,7 @@ import (
 
 func main() {
 	// 確認したいファイル
-	filePath := "data/ml_stock_response/latest_response.bin"
+	filePath := "../py-signal-buy/result/ml_stock_response/proto_kmeans-cluster_label_0.bin"
 
 	// 表示する行数を指定する変数
 	displayRows := 5
