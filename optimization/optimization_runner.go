@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// 許容ドローダウン値を渡す
 func RunOptimization(filePath string, params *ml_stockdata.Parameters) {
 	startTime := time.Now() // 実行時間の測定開始
 
@@ -48,7 +49,7 @@ func RunOptimization(filePath string, params *ml_stockdata.Parameters) {
 	totalTrials := trials * numSignals
 	fmt.Printf("パラメタ組合せ: %d, 正解ラベル数: %d, 総試行回数: %d\n", trials, numSignals, totalTrials)
 
-	// パラメータの最適化を実行
+	// 正解ラベルのシグナルで、パラメータの最適化を実行
 	_, _, results := OptimizeParameters(&stockResponse, params)
 
 	// 実行時間を測定
@@ -68,6 +69,8 @@ func RunOptimization(filePath string, params *ml_stockdata.Parameters) {
 			modelSignals := modelPredictions.PredictionDates
 			// シグナルを設定する前に元のシグナルを保存しておく（他のモデルで使うため）
 			originalSignals := stockResponse.SymbolData[0].Signals
+
+			// ここでは最初のデータのみ入れ替えを行っているが、全銘柄を入れ替える必要がある
 			stockResponse.SymbolData[0].Signals = modelSignals
 
 			// シグナル数を取得
@@ -77,6 +80,7 @@ func RunOptimization(filePath string, params *ml_stockdata.Parameters) {
 			modelStartTime := time.Now()
 
 			// パラメータの最適化を再実行
+			// ここは並列処理を注意する必要がある
 			_, _, modelResults := OptimizeParameters(&stockResponse, params)
 
 			// モデルの実行時間を測定

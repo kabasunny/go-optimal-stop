@@ -22,10 +22,13 @@ func main() {
 	params.SetTrailingStop(5.0, 15.0, 1.0)
 	params.SetTrailingStopUpdate(2.0, 8.0, 1.0)
 
+	// 総資金に対して、許容可能な最大ドローダウンを設定する
+
 	if !*useRandom {
 		fmt.Printf("学習モデルのシグナルで検証\n")
 
 		filePath := "../py-signal-buy/result/ml_stock_response/proto_kmeans-cluster_label_0.bin"
+		// 許容ドローダウン値を渡す
 		optimization.RunOptimization(filePath, params)
 	} else {
 		fmt.Printf("ランダムにシグナルを作成し、結果を確認\n")
@@ -52,6 +55,7 @@ func main() {
 		// 本日の日付を取得し、365*2 さかのぼる
 		startDate := time.Now().AddDate(-2, 0, 0).Format("2006-01-02")
 
+		// 許容ドローダウン値を渡す
 		random_signals.RunRandomSignals(csvDir, symbols, numSignals, useRandomSeed, attempts, params, startDate)
 	}
 
