@@ -36,12 +36,12 @@ func PrintResults(results []ml_stockdata.OptimizedResult, elapsedTime time.Durat
 	// 結果を表示
 	fmt.Println("  BEST 5:")
 	for _, result := range bestTop3 {
-		fmt.Printf("    [ LC: %.2f%%, TST: %.2f%%, TS: %.2f%%, 連続益: %.2f%%, 連続損: %.2f%%, 損益率: %.2f%%, 勝率: %.2f%% ]\n",
-			result.StopLossPercentage, result.TrailingStopTrigger, result.TrailingStopUpdate, result.MaxProfit, result.MaxLoss, result.ProfitLoss, result.WinRate)
+		fmt.Printf("    [ LC: %.2f%%, TST: %.2f%%, TS: %.2f%%, 勝率: %.2f%%, 連続益: %.2f%%, 連続損: %.2f%%, 損益率: %.2f%% ]\n",
+			result.StopLossPercentage, result.TrailingStopTrigger, result.TrailingStopUpdate, result.WinRate, result.MaxProfit, result.MaxLoss, result.ProfitLoss)
 	}
 	fmt.Println("  WORST 5:")
 	for _, result := range worstTop3 {
-		fmt.Printf("    [ LC: %.2f%%, TST: %.2f%%, TS: %.2f%%, 連続益: %.2f%%, 連続損: %.2f%%, 損益率: %.2f%%, 勝率: %.2f%% ]\n",
-			result.StopLossPercentage, result.TrailingStopTrigger, result.TrailingStopUpdate, result.MaxProfit, result.MaxLoss, result.ProfitLoss, result.WinRate)
+		fmt.Printf("    [ LC: %.2f%%, TST: %.2f%%, TS: %.2f%%, 勝率: %.2f%%, 連続益: %.2f%%, 連続損: %.2f%%, 損益率: %.2f%% ]\n",
+			result.StopLossPercentage, result.TrailingStopTrigger, result.TrailingStopUpdate, result.WinRate, result.MaxProfit, result.MaxLoss, result.ProfitLoss)
 	}
 }

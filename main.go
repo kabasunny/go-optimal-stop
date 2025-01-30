@@ -38,7 +38,7 @@ func main() {
 
 		// 予めPython側が、今日の日付で出力している前提
 		csvDir := fmt.Sprintf("../py-signal-buy/data/stock_data/formated_raw/%s", today)
-		getSymbolsDir := fmt.Sprintf("../py-signal-buy/data/stock_data/predictions/%s", today)
+		getSymbolsDir := fmt.Sprintf("../py-signal-buy/data/stock_data/predictions/kmeans/cluster_label_0/%s", today)
 
 		symbols, err := random_signals.GetSymbolsFromCSVFiles(getSymbolsDir)
 		if err != nil {

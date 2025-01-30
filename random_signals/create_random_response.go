@@ -44,7 +44,11 @@ func createStockResponse(csvDir string, symbols []string, numSignals int, startD
 		if endIndex > len(signals) {
 			endIndex = len(signals)
 		}
-		symbolDataList[i].Signals = signals[startIndex:endIndex]
+		// 範囲チェックを追加
+		if startIndex >= len(signals) || endIndex > len(signals) {
+			return ml_stockdata.InMLStockResponse{}, fmt.Errorf("シグナルの範囲外アクセスが発生しました。numSignals: %d, symbols: %d. 設定を確認してください。", numSignals, len(symbols))
+		}
+
 	}
 
 	// StockResponse構造体を作成

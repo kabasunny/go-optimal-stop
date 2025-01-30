@@ -1,7 +1,6 @@
 package trading
 
 import (
-	"fmt"
 	"go-optimal-stop/internal/ml_stockdata"
 	"sort"
 	"time"
@@ -15,7 +14,7 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, stopLossPercentag
 	var tradeResults []tradeResult // トレード結果を保持するスライス
 
 	// continue した日付を記録するリスト
-	var skippedDates []time.Time
+	// var skippedDates []time.Time
 	var totalSignals int
 
 	// 各シンボルデータをループ処理
@@ -28,20 +27,20 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, stopLossPercentag
 
 			startDate, err := parseDate(signal) // シグナルの日付を解析
 			if err != nil {
-				skippedDates = append(skippedDates, startDate)
+				// skippedDates = append(skippedDates, startDate)
 				continue
 			}
 
 			// 前回の終了日と開始日が重なる場合、次の開始日に移る
 			if !previousEndDate.IsZero() && startDate.Before(previousEndDate) {
-				skippedDates = append(skippedDates, startDate)
+				// skippedDates = append(skippedDates, startDate)
 				continue
 			}
 
 			// トレード戦略を実行し、利益を計算
 			purchaseDate, endDate, profitLoss, _, _, err := singleTradingStrategy(&symbolData.DailyData, startDate, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
 			if err != nil {
-				skippedDates = append(skippedDates, startDate)
+				// skippedDates = append(skippedDates, startDate)
 				continue
 			}
 
@@ -78,8 +77,8 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, stopLossPercentag
 	winRate := float64(winCount) / float64(totalCount) * 100
 
 	// スキップしたシグナルの個数を表示
-	skippedCount := len(skippedDates)
-	fmt.Printf("Total Signals: %d, Skipped Signals: %d, Processed Signals: %d\n", totalSignals, skippedCount, totalSignals-skippedCount)
+	// skippedCount := len(skippedDates)
+	// fmt.Printf("Total Signals: %d, Skipped Signals: %d, Processed Signals: %d\n", totalSignals, skippedCount, totalSignals-skippedCount)
 
 	return totalProfitLoss, winRate, maxPositiveStreak, maxNegativeStreak, nil
 }

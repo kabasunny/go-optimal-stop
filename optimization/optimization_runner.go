@@ -13,7 +13,7 @@ import (
 
 // 許容ドローダウン値を渡す
 func RunOptimization(filePath string, params *ml_stockdata.Parameters) {
-	startTime := time.Now() // 実行時間の測定開始
+	// startTime := time.Now() // 実行時間の測定開始
 
 	// ファイルを読み込み、stockResponseにプロトコルバッファバイナリからデータをマッピング
 	data, err := os.ReadFile(filePath)
@@ -49,50 +49,53 @@ func RunOptimization(filePath string, params *ml_stockdata.Parameters) {
 	totalTrials := trials * numSignals
 	fmt.Printf("パラメタ組合せ: %d, 正解ラベル数: %d, 総試行回数: %d\n", trials, numSignals, totalTrials)
 
-	// 正解ラベルのシグナルで、パラメータの最適化を実行
-	_, _, results := OptimizeParameters(&stockResponse, params)
+	// // 正解ラベルのシグナルで、パラメータの最適化を実行
+	// _, _, results := OptimizeParameters(&stockResponse, params)
 
-	// 実行時間を測定
-	elapsedTime := time.Since(startTime)
+	// // 実行時間を測定
+	// elapsedTime := time.Since(startTime)
 
-	// 結果を表示
-	PrintResults(results, elapsedTime)
+	// // 結果を表示
+	// PrintResults(results, elapsedTime)
 
-	// モデル名をmodel_predictionsフィールドから自動抽出
-	modelNames := extractModelNames(&protoResponse)
+	// モデル名correct_labelを最初に配置し、あとはmodel_predictionsフィールドから自動抽出し
+	modelNames := []string{"correct_label"}
+	for modelName := range protoResponse.SymbolData[0].ModelPredictions {
+		if modelName != "correct_label" {
+			modelNames = append(modelNames, modelName)
+		}
+	}
 	fmt.Printf("シミュレーションモデル名: %v\n", modelNames)
 
 	for _, modelName := range modelNames {
-		// モデルの予測データを取得
-		if modelPredictions, ok := protoResponse.SymbolData[0].ModelPredictions[modelName]; ok && modelPredictions != nil {
-			// モデルごとのシグナルを設定
-			modelSignals := modelPredictions.PredictionDates
-			// シグナルを設定する前に元のシグナルを保存しておく（他のモデルで使うため）
-			originalSignals := stockResponse.SymbolData[0].Signals
+		// すべてのシンボルに対してシグナルを一斉に置き換える
+		originalSignals := make(map[int][]string)
+		var signalCount int
+		for i := range protoResponse.SymbolData {
+			if modelPredictions, ok := protoResponse.SymbolData[i].ModelPredictions[modelName]; ok && modelPredictions != nil {
+				stockResponse.SymbolData[i].Signals = modelPredictions.PredictionDates // 新しいシグナルを設定
+				signalCount += len(modelPredictions.PredictionDates)                   // 各シンボルのシグナル数をカウント
+			} else {
+				fmt.Printf("モデル: %s の予測データが見つかりませんでした。シンボル: %s をスキップします。\n", modelName, protoResponse.SymbolData[i].Symbol)
+			}
+		}
 
-			// ここでは最初のデータのみ入れ替えを行っているが、全銘柄を入れ替える必要がある
-			stockResponse.SymbolData[0].Signals = modelSignals
+		// モデルの最適化開始時間を記録
+		modelStartTime := time.Now()
 
-			// シグナル数を取得
-			modelSignalCount := len(modelSignals)
+		// すべてのシグナルが置き換えられた後にパラメータの最適化を実行
+		_, _, modelResults := OptimizeParameters(&stockResponse, params)
 
-			// モデルの最適化開始時間を記録
-			modelStartTime := time.Now()
+		// モデルの実行時間を測定
+		modelElapsedTime := time.Since(modelStartTime)
 
-			// パラメータの最適化を再実行
-			// ここは並列処理を注意する必要がある
-			_, _, modelResults := OptimizeParameters(&stockResponse, params)
+		// モデルごとの結果を表示
+		PrintResults(modelResults, modelElapsedTime, WithModelName(modelName), WithSignalCount(signalCount))
 
-			// モデルの実行時間を測定
-			modelElapsedTime := time.Since(modelStartTime)
-
-			// モデルごとの結果を表示
-			PrintResults(modelResults, modelElapsedTime, WithModelName(modelName), WithSignalCount(modelSignalCount))
-
-			// 元のシグナルに戻す
-			stockResponse.SymbolData[0].Signals = originalSignals
-		} else {
-			fmt.Printf("モデル: %s の予測データが見つかりませんでした。スキップします。\n", modelName)
+		// 元のシグナルに戻す
+		for i := range protoResponse.SymbolData {
+			stockResponse.SymbolData[i].Signals = originalSignals[i]
 		}
 	}
+
 }
