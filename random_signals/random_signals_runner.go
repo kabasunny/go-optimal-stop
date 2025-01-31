@@ -13,6 +13,7 @@ func RunRandomSignals(filePath string, useRandomSeed bool, attempts int, params 
 	var stockResponse ml_stockdata.InMLStockResponse
 	var err error
 	var numSignals int
+	var symbols []string
 	seed := int64(42) // 固定シード
 
 	for i := 0; i < attempts; i++ {
@@ -20,11 +21,11 @@ func RunRandomSignals(filePath string, useRandomSeed bool, attempts int, params 
 		fmt.Printf("ランダム試行 %d 回目 / %d 回中\n", i+1, attempts)
 		if useRandomSeed {
 			// 完全にランダムにシグナルを生成
-			stockResponse, numSignals, err = createStockResponse(filePath)
+			stockResponse, numSignals, symbols, err = createStockResponse(filePath)
 
 		} else {
 			// 固定シードを使用してシグナルを生成
-			stockResponse, numSignals, err = createStockResponse(filePath, seed)
+			stockResponse, numSignals, symbols, err = createStockResponse(filePath, seed)
 		}
 
 		if err != nil {
@@ -32,10 +33,12 @@ func RunRandomSignals(filePath string, useRandomSeed bool, attempts int, params 
 			return
 		}
 
+		fmt.Printf("Symbols: %v\n", symbols)
+
 		// 総試行回数を算出
 		trials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates) * len(stockResponse.SymbolData)
 		totalTrials := trials * numSignals
-		fmt.Printf("試行回数: %d, シグナル数: %d, 総試行回数: %d\n", trials, numSignals, totalTrials)
+		fmt.Printf("パラメタ組合せ: %d, シグナル数: %d, 総試行回数: %d\n", trials, numSignals, totalTrials)
 
 		// パラメータの最適化を実行
 		_, _, results := optimization.OptimizeParameters(&stockResponse, params)

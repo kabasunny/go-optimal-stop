@@ -22,19 +22,27 @@ func OptimizeParameters(response *ml_stockdata.InMLStockResponse, params *ml_sto
 				go func(stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) {
 					defer wg.Done() // 処理終了時にWaitGroupのカウントをデクリメント
 					// トレーディング戦略を実行し、結果を取得
-					totalProfitLoss, winRate, maxProfit, maxLoss, err := trading.TradingStrategy(response, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
+					totalProfitLoss, winRate, maxConsecutiveProfit, maxConsecutiveLos, totalWins, totalLosses, averageProfit, averageLoss, maxDrawdown, sharpeRatio, riskRewardRatio, expectedValue, err := trading.TradingStrategy(response, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
 					if err != nil {
 						return
 					}
 					// 結果をOptimizedResult構造体に格納
 					result := ml_stockdata.OptimizedResult{
-						StopLossPercentage:  stopLossPercentage,
-						TrailingStopTrigger: trailingStopTrigger,
-						TrailingStopUpdate:  trailingStopUpdate,
-						ProfitLoss:          totalProfitLoss,
-						WinRate:             winRate,
-						MaxProfit:           maxProfit,
-						MaxLoss:             maxLoss,
+						StopLossPercentage:   stopLossPercentage,
+						TrailingStopTrigger:  trailingStopTrigger,
+						TrailingStopUpdate:   trailingStopUpdate,
+						ProfitLoss:           totalProfitLoss,
+						WinRate:              winRate,
+						MaxConsecutiveProfit: maxConsecutiveProfit,
+						MaxConsecutiveLoss:   maxConsecutiveLos,
+						TotalWins:            totalWins,
+						TotalLosses:          totalLosses,
+						AverageProfit:        averageProfit,
+						AverageLoss:          averageLoss,
+						MaxDrawdown:          maxDrawdown,
+						SharpeRatio:          sharpeRatio,
+						RiskRewardRatio:      riskRewardRatio,
+						ExpectedValue:        expectedValue,
 					}
 					mu.Lock()                         // 排他制御開始
 					results = append(results, result) // 結果をスライスに追加
