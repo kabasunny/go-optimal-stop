@@ -12,6 +12,8 @@ import (
 func main() {
 	start := time.Now() // 開始時刻を記録
 
+	filePath := "../py-signal-buy/result/ml_stock_response/proto_kmeans-cluster_label_0.bin"
+
 	// 引数を定義
 	useRandom := flag.Bool("random", false, "Use random signals")
 	flag.Parse()
@@ -33,30 +35,11 @@ func main() {
 	} else {
 		fmt.Printf("ランダムにシグナルを作成し、結果を確認\n")
 
-		// 今日の日付を取得し、フォーマットする
-		today := time.Now().Format("2006-01-02")
-
-		// 予めPython側が、今日の日付で出力している前提
-		csvDir := fmt.Sprintf("../py-signal-buy/data/stock_data/formated_raw/%s", today)
-		getSymbolsDir := fmt.Sprintf("../py-signal-buy/data/stock_data/predictions/kmeans/cluster_label_0/%s", today)
-
-		symbols, err := random_signals.GetSymbolsFromCSVFiles(getSymbolsDir)
-		if err != nil {
-			fmt.Printf("Failed to get symbols from CSV files: %v\n", err)
-			return
-		}
-		fmt.Printf("Symbols: %v\n", symbols)
-
-		numSignals := 16513
-		// フラグを定義
 		useRandomSeed := true // trueはランダム値、falseは固定値
 		attempts := 3         // useRandomSeed := true の時、ランダム値試行を繰り返す回数
 
-		// 本日の日付を取得し、365*2 さかのぼる
-		startDate := time.Now().AddDate(-2, 0, 0).Format("2006-01-02")
-
 		// 許容ドローダウン値を渡す
-		random_signals.RunRandomSignals(csvDir, symbols, numSignals, useRandomSeed, attempts, params, startDate)
+		random_signals.RunRandomSignals(filePath, useRandomSeed, attempts, params)
 	}
 
 	elapsed := time.Since(start)         // 経過時間を計算

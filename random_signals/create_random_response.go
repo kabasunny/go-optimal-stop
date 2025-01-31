@@ -2,57 +2,48 @@ package random_signals
 
 import (
 	"fmt"
+	"os"
 
+	"go-optimal-stop/experiment_proto"
 	"go-optimal-stop/internal/ml_stockdata"
+
+	"google.golang.org/protobuf/proto"
 )
 
 // CSVファイルからデータを読み込み、StockResponse構造体を作成
-func createStockResponse(csvDir string, symbols []string, numSignals int, startDate string, seed ...int64) (ml_stockdata.InMLStockResponse, error) {
-	var symbolDataList []ml_stockdata.InMLSymbolData
-	var allDailyData []ml_stockdata.InMLDailyData
-
-	for _, symbol := range symbols {
-		filePath := fmt.Sprintf("%s/%s.csv", csvDir, symbol)
-
-		// CSVファイルを読み込み
-		data, err := loadCSV(filePath, startDate)
-		if err != nil {
-			return ml_stockdata.InMLStockResponse{}, fmt.Errorf("CSVファイルの読み込みエラー: %v", err)
-		}
-
-		symbolData := ml_stockdata.InMLSymbolData{
-			Symbol:    symbol,
-			DailyData: data,
-		}
-		symbolDataList = append(symbolDataList, symbolData)
-		allDailyData = append(allDailyData, data...)
+func createStockResponse(filePath string, seed ...int64) (ml_stockdata.InMLStockResponse, int, error) {
+	// ファイルを読み込み、stockResponseにプロトコルバッファバイナリからデータをマッピング
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		fmt.Printf("ファイルの読み込みエラー: %v\n", err)
+		return ml_stockdata.InMLStockResponse{}, 0, err
 	}
 
-	// ランダムにシグナルを生成
-	var signals []string
-	if len(seed) > 0 {
-		signals = generateRandomSignals(allDailyData, numSignals, seed[0])
-	} else {
-		signals = generateRandomSignals(allDailyData, numSignals)
+	var protoResponse experiment_proto.MLStockResponse
+	if err := proto.Unmarshal(data, &protoResponse); err != nil {
+		fmt.Printf("プロトコルバッファのアンマーシャルエラー: %v\n", err)
+		return ml_stockdata.InMLStockResponse{}, 0, err
 	}
 
-	// シグナルをシンボルごとに分割してマッピング
-	signalsPerSymbol := numSignals / len(symbols)
-	for i := range symbolDataList {
-		startIndex := i * signalsPerSymbol
-		endIndex := startIndex + signalsPerSymbol
-		if endIndex > len(signals) {
-			endIndex = len(signals)
-		}
-		// 範囲チェックを追加
-		if startIndex >= len(signals) || endIndex > len(signals) {
-			return ml_stockdata.InMLStockResponse{}, fmt.Errorf("シグナルの範囲外アクセスが発生しました。numSignals: %d, symbols: %d. 設定を確認してください。", numSignals, len(symbols))
-		}
+	// プロトコルバッファから内部MLStockResponse型への変換
+	stockResponse := experiment_proto.ConvertProtoToInternal(&protoResponse)
 
+	// 各銘柄のシグナル数を合計する
+	totalSignals := 0
+	for i := range stockResponse.SymbolData {
+		numSignals := len(stockResponse.SymbolData[i].Signals)
+
+		// 検出したシグナル数でランダムにシグナルを生成
+		var signals []string
+		if len(seed) > 0 {
+			signals = generateRandomSignals(stockResponse.SymbolData[i].DailyData, numSignals, seed[0])
+		} else {
+			signals = generateRandomSignals(stockResponse.SymbolData[i].DailyData, numSignals)
+		}
+		stockResponse.SymbolData[i].Signals = signals
+
+		totalSignals += numSignals
 	}
 
-	// StockResponse構造体を作成
-	return ml_stockdata.InMLStockResponse{
-		SymbolData: symbolDataList,
-	}, nil
+	return stockResponse, totalSignals, nil
 }

@@ -1,5 +1,3 @@
-// random_signals.go
-
 package random_signals
 
 import (
@@ -10,10 +8,11 @@ import (
 	"go-optimal-stop/optimization"
 )
 
-func RunRandomSignals(csvDir string, symbols []string, numSignals int, useRandomSeed bool, attempts int, params *ml_stockdata.Parameters, startDate string) {
+func RunRandomSignals(filePath string, useRandomSeed bool, attempts int, params *ml_stockdata.Parameters) {
 
 	var stockResponse ml_stockdata.InMLStockResponse
 	var err error
+	var numSignals int
 	seed := int64(42) // 固定シード
 
 	for i := 0; i < attempts; i++ {
@@ -21,23 +20,22 @@ func RunRandomSignals(csvDir string, symbols []string, numSignals int, useRandom
 		fmt.Printf("ランダム試行 %d 回目 / %d 回中\n", i+1, attempts)
 		if useRandomSeed {
 			// 完全にランダムにシグナルを生成
-			stockResponse, err = createStockResponse(csvDir, symbols, numSignals, startDate)
+			stockResponse, numSignals, err = createStockResponse(filePath)
 
 		} else {
 			// 固定シードを使用してシグナルを生成
-			stockResponse, err = createStockResponse(csvDir, symbols, numSignals, startDate, seed)
+			stockResponse, numSignals, err = createStockResponse(filePath, seed)
 		}
 
 		if err != nil {
 			fmt.Printf("StockResponseの作成エラー: %v\n", err)
 			return
 		}
-		// fmt.Print(stockResponse)
 
 		// 総試行回数を算出
-		traials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates) * len(stockResponse.SymbolData)
-		totalTrials := traials * numSignals
-		fmt.Printf("試行回数: %d, シグナル数: %d, 総試行回数: %d\n", traials, numSignals, totalTrials)
+		trials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates) * len(stockResponse.SymbolData)
+		totalTrials := trials * numSignals
+		fmt.Printf("試行回数: %d, シグナル数: %d, 総試行回数: %d\n", trials, numSignals, totalTrials)
 
 		// パラメータの最適化を実行
 		_, _, results := optimization.OptimizeParameters(&stockResponse, params)
