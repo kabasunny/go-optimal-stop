@@ -29,7 +29,6 @@ func main() {
 	if !*useRandom {
 		fmt.Printf("学習モデルのシグナルで検証\n")
 
-		filePath := "../py-signal-buy/result/ml_stock_response/proto_kmeans-cluster_label_0.bin"
 		// 許容ドローダウン値を渡す
 		optimization.RunOptimization(filePath, params)
 	} else {
