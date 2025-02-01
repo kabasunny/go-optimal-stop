@@ -8,7 +8,7 @@ import (
 	"go-optimal-stop/optimization"
 )
 
-func RunRandomSignals(filePath string, useRandomSeed bool, attempts int, params *ml_stockdata.Parameters) {
+func RunRandomSignals(filePath *string, totalFunds *int, params *ml_stockdata.Parameters, useRandomSeed bool, attempts int) {
 
 	var stockResponse ml_stockdata.InMLStockResponse
 	var err error
@@ -41,7 +41,7 @@ func RunRandomSignals(filePath string, useRandomSeed bool, attempts int, params 
 		fmt.Printf("パラメタ組合せ: %d, シグナル数: %d, 総試行回数: %d\n", trials, numSignals, totalTrials)
 
 		// パラメータの最適化を実行
-		_, _, results := optimization.OptimizeParameters(&stockResponse, params)
+		_, _, results := optimization.OptimizeParameters(&stockResponse, totalFunds, params)
 
 		// 実行時間を測定
 		elapsedTime := time.Since(startTime)

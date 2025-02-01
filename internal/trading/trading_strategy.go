@@ -8,10 +8,10 @@ import (
 )
 
 // TradingStrategy 関数は、与えられた株価データとトレーディングパラメータに基づいて総利益、勝率、最大ポジティブストリーク、最大ネガティブストリーク、その他の指標を返す
-func TradingStrategy(response *ml_stockdata.InMLStockResponse, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (float64, float64, float64, float64, int, int, float64, float64, float64, float64, float64, float64, error) {
+func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (float64, float64, float64, float64, int, int, float64, float64, float64, float64, float64, float64, error) {
 
 	// ここで総資金の変数を用意する、（前提：どの銘柄のシグナルを優先するか）
-	// 各
+	// currentTotalFunds := *totalFunds
 
 	totalProfitLoss := 0.0         // 全体の利益を追跡
 	winCount := 0                  // 勝ちトレードのカウント

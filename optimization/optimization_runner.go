@@ -12,11 +12,11 @@ import (
 )
 
 // 許容ドローダウン値を渡す
-func RunOptimization(filePath string, params *ml_stockdata.Parameters) {
+func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Parameters) {
 	// startTime := time.Now() // 実行時間の測定開始
 
 	// ファイルを読み込み、stockResponseにプロトコルバッファバイナリからデータをマッピング
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile(*filePath)
 	if err != nil {
 		fmt.Printf("ファイルの読み込みエラー: %v\n", err)
 		return
@@ -84,7 +84,7 @@ func RunOptimization(filePath string, params *ml_stockdata.Parameters) {
 		modelStartTime := time.Now()
 
 		// すべてのシグナルが置き換えられた後にパラメータの最適化を実行
-		_, _, modelResults := OptimizeParameters(&stockResponse, params)
+		_, _, modelResults := OptimizeParameters(&stockResponse, totalFunds, params)
 
 		// モデルの実行時間を測定
 		modelElapsedTime := time.Since(modelStartTime)

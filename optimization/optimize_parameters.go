@@ -9,7 +9,7 @@ import (
 )
 
 // OptimizeParameters 関数は、与えられた株価データとトレーディングパラメータに基づいて最適なパラメータの組み合わせを見つける
-func OptimizeParameters(response *ml_stockdata.InMLStockResponse, params *ml_stockdata.Parameters) (ml_stockdata.OptimizedResult, ml_stockdata.OptimizedResult, []ml_stockdata.OptimizedResult) {
+func OptimizeParameters(response *ml_stockdata.InMLStockResponse, totalFunds *int, params *ml_stockdata.Parameters) (ml_stockdata.OptimizedResult, ml_stockdata.OptimizedResult, []ml_stockdata.OptimizedResult) {
 	var results []ml_stockdata.OptimizedResult // 最適化結果を格納するスライス
 	var mu sync.Mutex                          // 排他制御用のミューテックス
 	var wg sync.WaitGroup                      // 同期用のWaitGroup
@@ -19,10 +19,10 @@ func OptimizeParameters(response *ml_stockdata.InMLStockResponse, params *ml_sto
 		for _, trailingStopTrigger := range params.TrailingStopTriggers {
 			for _, trailingStopUpdate := range params.TrailingStopUpdates {
 				wg.Add(1) // WaitGroupのカウントをインクリメント
-				go func(stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) {
+				go func(totalFunds *int, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) {
 					defer wg.Done() // 処理終了時にWaitGroupのカウントをデクリメント
 					// トレーディング戦略を実行し、結果を取得
-					totalProfitLoss, winRate, maxConsecutiveProfit, maxConsecutiveLos, totalWins, totalLosses, averageProfit, averageLoss, maxDrawdown, sharpeRatio, riskRewardRatio, expectedValue, err := trading.TradingStrategy(response, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
+					totalProfitLoss, winRate, maxConsecutiveProfit, maxConsecutiveLos, totalWins, totalLosses, averageProfit, averageLoss, maxDrawdown, sharpeRatio, riskRewardRatio, expectedValue, err := trading.TradingStrategy(response, totalFunds, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
 					if err != nil {
 						return
 					}
@@ -47,7 +47,7 @@ func OptimizeParameters(response *ml_stockdata.InMLStockResponse, params *ml_sto
 					mu.Lock()                         // 排他制御開始
 					results = append(results, result) // 結果をスライスに追加
 					mu.Unlock()                       // 排他制御終了
-				}(stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
+				}(totalFunds, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
 			}
 		}
 	}

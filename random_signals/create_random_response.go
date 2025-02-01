@@ -11,9 +11,9 @@ import (
 )
 
 // CSVファイルからデータを読み込み、StockResponse構造体を作成
-func createStockResponse(filePath string, seed ...int64) (ml_stockdata.InMLStockResponse, int, []string, error) {
+func createStockResponse(filePath *string, seed ...int64) (ml_stockdata.InMLStockResponse, int, []string, error) {
 	// ファイルを読み込み、stockResponseにプロトコルバッファバイナリからデータをマッピング
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile(*filePath)
 	if err != nil {
 		fmt.Printf("ファイルの読み込みエラー: %v\n", err)
 		return ml_stockdata.InMLStockResponse{}, 0, nil, err
