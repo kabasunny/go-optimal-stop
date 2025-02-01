@@ -7,7 +7,7 @@ import (
 	"go-optimal-stop/internal/ml_stockdata"
 )
 
-// singleTradingStrategy 関数は、与えられた株価データ、開始日、およびトレーディングパラメータに基づいて、開始日、終了日、利益率、購入価格、終了価格を
+// singleTradingStrategy: トレーディング戦略の実行
 func singleTradingStrategy(data *[]ml_stockdata.InMLDailyData, startDate time.Time, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (time.Time, time.Time, float64, float64, float64, error) {
 	d := *data
 
@@ -36,19 +36,19 @@ func singleTradingStrategy(data *[]ml_stockdata.InMLDailyData, startDate time.Ti
 		return time.Time{}, time.Time{}, 0, 0, 0, err
 	}
 
-	// ストップロスとトレーリングストップの閾値を計算
-	stopLossThreshold, trailingStopTriggerPrice := calculateStopLoss(purchasePrice, stopLossPercentage, trailingStopTrigger)
-
 	// 終了日と終了価格を見つける
-	endDate, endPrice, err := findExitDate(d, startDate, stopLossThreshold, trailingStopTriggerPrice, trailingStopTrigger, trailingStopUpdate)
+	endDate, endPrice, err := findExitDate(d, purchaseDate, purchasePrice, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
 	if err != nil {
 		return time.Time{}, time.Time{}, 0, 0, 0, err
 	}
 
 	// 利益率を計算
 	profitLoss := (endPrice - purchasePrice) / purchasePrice * 100
-	isProfit := profitLoss > 0
-	profitLoss = round(profitLoss, isProfit)
+	if profitLoss > 0 {
+		profitLoss = roundDown(profitLoss)
+	} else if profitLoss < 0 {
+		profitLoss = roundUp(profitLoss)
+	}
 
 	// 購入日、終了日、利益率、購入価格、終了価格を返す
 	return purchaseDate, endDate, profitLoss, purchasePrice, endPrice, nil
