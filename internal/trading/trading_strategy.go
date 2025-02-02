@@ -21,9 +21,8 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 		for _, signal := range symbolData.Signals {
 			date, err := parseDate(signal)
 			if err != nil {
-				fmt.Println("skip")
+				fmt.Println("signal skip")
 				continue // 日付の解析に失敗した場合はスキップ
-
 			}
 			signals = append(signals, struct {
 				Symbol     string
@@ -42,11 +41,11 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 	})
 
 	activeTrades := make(map[string]tradeRecord) // 各シンボルのホールド状態
-
-	currentTotalFunds := *totalFunds // 総資金の初期化
-	totalProfitLoss := 0.0           // 全体の利益を追跡
-	winCount, totalCount := 0, 0     // 勝ちトレード数と総トレード数
-	var tradeResults []tradeRecord   // トレード結果を保持するスライス
+	originalTotalFunds := *totalFunds            // 総資金の初期化（コピーを作成）
+	availableFunds := *totalFunds                // 使用可能な資金の初期化
+	totalProfitLoss := 0.0                       // 全体の利益を追跡
+	winCount, totalCount := 0, 0                 // 勝ちトレード数と総トレード数
+	var tradeResults []tradeRecord               // トレード結果を保持するスライス
 
 	// シンボルごとのエグジット情報を保持するマップ
 	exitMap := make(map[time.Time][]tradeRecord)
@@ -55,51 +54,61 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 	for _, record := range activeTrades {
 		exitMap[record.ExitDate] = append(exitMap[record.ExitDate], record)
 	}
-
-	fmt.Print(signals)
-
+	fmt.Printf("len(signals): %d\n", len(signals))
 	// ---- シグナルの処理 ----
 	for _, signal := range signals {
+		fmt.Println("シグナル処理中:", signal) // デバッグ用のプリント文を追加
+
 		// (1) エグジット処理：現在の signal.SignalDate に対応するエグジット日があるか確認
-		if exits, exists := exitMap[signal.SignalDate]; exists {
-			for _, exit := range exits {
-				currentTotalFunds += int(exit.ExitPrice) // 資金を戻す
-				totalProfitLoss += exit.ProfitLoss
-				tradeResults = append(tradeResults, exit) // トレード結果を保存
-				delete(activeTrades, exit.Symbol)         // ホールド解除
+		for exitDate, exits := range exitMap {
+			if signal.SignalDate.After(exitDate) {
+				for _, exit := range exits {
+					fmt.Printf("エグジット処理中: シンボル: %s, エグジット日付: %v, 利益損失: %v\n", exit.Symbol, exit.ExitDate, exit.ProfitLoss) // デバッグ用のプリント文を追加
+					availableFunds += int(exit.ExitPrice)                                                                  // 使用可能資金を戻す
+					originalTotalFunds += int(exit.ProfitLoss)                                                             // 総資金を逐次更新
+					totalProfitLoss += exit.ProfitLoss
+					if exit.ProfitLoss > 0 {
+						winCount++
+					}
+					totalCount++
+					tradeResults = append(tradeResults, exit) // トレード結果を保存
+					delete(activeTrades, exit.Symbol)         // ホールド解除
+					fmt.Println("ホールド解除:", exit.Symbol)       // デバッグ用のプリント文を追加
+				}
+				delete(exitMap, exitDate) // エグジット済みのデータを削除
 			}
-			delete(exitMap, signal.SignalDate) // エグジット済みのデータを削除
 		}
 
 		// (2) 既にホールド中ならスキップ
 		if _, holding := activeTrades[signal.Symbol]; holding {
+			fmt.Println("ホールド中:", signal)
 			continue
 		}
 
 		// (3) シンボルのデータを検索してエントリー処理
 		for _, symbolData := range response.SymbolData {
 			if symbolData.Symbol != signal.Symbol {
-				fmt.Printf("    スキップ: 銘柄 %s は既にホールド中\n", signal.Symbol) // 【デバッグ用】 ホールド中のためスキップをログ出力
+				fmt.Printf("スキップ: 銘柄 %s は既にホールド中\n", signal.Symbol) // 【デバッグ用】 ホールド中のためスキップをログ出力
 				continue
 			}
-
 			// ---- エントリー資金計算 ----
-			_, _, entryCost, err := determinePositionSize(currentTotalFunds, &symbolData.DailyData, signal.SignalDate)
+			_, _, entryCost, err := determinePositionSize(originalTotalFunds, &symbolData.DailyData, signal.SignalDate)
 			if err != nil || entryCost == 0 {
-				// fmt.Println("        エントリーコスト 0 のためスキップ") // 【デバッグ用】 エントリーコスト0でスキップをログ出力
+				fmt.Println("エントリーコスト 0 のためスキップ") // 【デバッグ用】 エントリーコスト0でスキップをログ出力
 				continue
 			}
-
-			currentTotalFunds -= int(entryCost) // 購入資金を引く
+			availableFunds -= int(entryCost) // 使用可能資金を引く
 
 			// ---- トレード実行 ----
+			fmt.Println("トレード実行")
 			purchaseDate, exitDate, profitLoss, _, exitPrice, err := singleTradingStrategy(
 				&symbolData.DailyData, signal.SignalDate, stopLossPercentage, trailingStopTrigger, trailingStopUpdate,
 			)
+			fmt.Println("exitDate:", exitDate)
 			if err != nil {
+				fmt.Println("トレード実行 skip")
 				continue
 			}
-
 			// ---- エントリー情報の保存 ----
 			activeTrades[signal.Symbol] = tradeRecord{
 				Symbol:     signal.Symbol,
@@ -109,7 +118,6 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 				EntryCost:  entryCost,
 				ExitPrice:  exitPrice,
 			}
-
 			// エグジット情報も `exitMap` に追加
 			exitMap[exitDate] = append(exitMap[exitDate], tradeRecord{
 				Symbol:     signal.Symbol,
@@ -119,11 +127,16 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 				EntryCost:  entryCost,
 				ExitPrice:  exitPrice,
 			})
+			fmt.Println("exitMap[exitDate]:", exitMap)
 		}
 	}
 
 	// 計算処理（勝率・リスク管理指標）
-	winRate := float64(winCount) / float64(totalCount) * 100
+	winRate := 0.0
+	if totalCount > 0 {
+		winRate = float64(winCount) / float64(totalCount) * 100
+	}
+
 	averageProfit, averageLoss := calculateAverages(tradeResults)
 	maxDrawdown := calculateMaxDrawdown(tradeResults)
 	sharpeRatio := calculateSharpeRatio(tradeResults, 0)
@@ -131,11 +144,12 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 	if averageLoss != 0 {
 		riskRewardRatio = averageProfit / math.Abs(averageLoss)
 	}
-
 	expectedValue := 0.0
 	if totalCount > 0 {
 		expectedValue = ((winRate * averageProfit) - ((100 - winRate) * averageLoss)) / 100
 	}
 
-	return totalProfitLoss, winRate, 0, 0, winCount, totalCount - winCount, averageProfit, averageLoss, maxDrawdown, sharpeRatio, riskRewardRatio, expectedValue, nil
+	maxConsecutiveProfit, maxConsecutiveLos := calculateMaxConsecutive(tradeResults)
+
+	return totalProfitLoss, winRate, maxConsecutiveProfit, maxConsecutiveLos, winCount, totalCount - winCount, averageProfit, averageLoss, maxDrawdown, sharpeRatio, riskRewardRatio, expectedValue, nil
 }

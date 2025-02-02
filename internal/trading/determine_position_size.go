@@ -9,7 +9,7 @@ import (
 
 // determinePositionSize は、ATRに基づきポジションサイズとエントリー価格、エントリーコストを決定
 func determinePositionSize(currentFunds int, dailyData *[]ml_stockdata.InMLDailyData, signalDate time.Time) (float64, float64, float64, error) {
-	const commissionRate = 0.1 // 手数料率（例: 0.1%）
+	const commissionRate = 0.2 // 手数料率（例: 0.1%）
 	const unitSize = 100       // 単元数
 
 	// fmt.Println("determinePositionSize 開始")                                               // 【デバッグ用】 関数開始をログ出力
@@ -25,7 +25,7 @@ func determinePositionSize(currentFunds int, dailyData *[]ml_stockdata.InMLDaily
 
 	// ATRを計算
 	atr := calculateATR(dailyData, signalDate)
-	fmt.Printf("  calculateATR 完了: ATR: %.2f\n", atr) // 【デバッグ用】 ATR をログ出力
+	fmt.Printf("  calculateATR 完了: 2ATR: %.2f\n", atr*2) // 【デバッグ用】 ATR をログ出力
 
 	// リスク許容度を定義（例: 総資金の2%）
 	riskPerTrade := 0.01 * float64(currentFunds)
