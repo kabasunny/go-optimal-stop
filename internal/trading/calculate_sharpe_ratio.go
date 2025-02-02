@@ -2,7 +2,7 @@ package trading
 
 // calculateSharpeRatio 関数は、トレード結果からシャープレシオを計算
 // シャープレシオはリスク調整後のリターンを評価する指標
-func calculateSharpeRatio(tradeResults []tradeResult, riskFreeRate float64) float64 {
+func calculateSharpeRatio(tradeResults []tradeRecord, riskFreeRate float64) float64 {
 	totalReturn := 0.0
 	returns := []float64{}
 

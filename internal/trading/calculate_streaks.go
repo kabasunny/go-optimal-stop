@@ -1,7 +1,7 @@
 package trading
 
 // calculateStreaks 関数は、トレード結果のスライスを受け取り、最大ポジティブストリークと最大ネガティブストリークを計算して返す
-func calculateStreaks(results []tradeResult) (float64, float64) {
+func calculateStreaks(results []tradeRecord) (float64, float64) {
 	maxPositiveStreak := 0.0     // 最大のポジティブストリークを追跡
 	maxNegativeStreak := 0.0     // 最大のネガティブストリークを追跡
 	currentPositiveStreak := 0.0 // 現在のポジティブストリークを追跡

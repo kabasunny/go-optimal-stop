@@ -9,6 +9,13 @@ import (
 
 // 日付データからランダムにシグナルを選ぶ関数
 func generateRandomSignals(data []ml_stockdata.InMLDailyData, numSignals int, seed ...int64) []string {
+	if len(data) <= 30 {
+		// データが30個以下の場合、空のシグナルを返す
+		return []string{}
+	}
+
+	// 初めの30個を除いたデータを使用
+	data = data[30:]
 
 	var r *rand.Rand
 	// seedが提供されている場合、ランダム数生成器にseedを使用

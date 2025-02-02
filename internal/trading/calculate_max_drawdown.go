@@ -2,7 +2,7 @@ package trading
 
 // 後ほど、総資金をベースに計算を行う
 // calculateMaxDrawdown は、トレード結果から最大ドローダウンを計算する
-func calculateMaxDrawdown(tradeResults []tradeResult) float64 {
+func calculateMaxDrawdown(tradeResults []tradeRecord) float64 {
 	if len(tradeResults) == 0 {
 		return 0
 	}

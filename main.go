@@ -12,9 +12,9 @@ import (
 func main() {
 	start := time.Now() // 開始時刻を記録
 
-	filePath := "../py-signal-buy/result/ml_stock_response/proto_kmeans-cluster_label_0.bin"
+	filePath := "../py-signal-buy/result/ml_stock_response/proto_kmeans-cluster_label_4.bin"
 
-	totalFunds := 1000000
+	totalFunds := 10000000
 
 	// 引数を定義
 	useRandom := flag.Bool("random", false, "Use random signals")
@@ -22,9 +22,9 @@ func main() {
 
 	// Parameters構造体を作成し、関数を使ってパラメータを設定
 	params := &ml_stockdata.Parameters{}
-	params.SetStopLoss(2.0, 8.0, 1.0)
-	params.SetTrailingStop(5.0, 15.0, 1.0)
-	params.SetTrailingStopUpdate(2.0, 8.0, 1.0)
+	params.SetStopLoss(2.0, 2.0, 1.0)
+	params.SetTrailingStop(5.0, 5.0, 1.0)
+	params.SetTrailingStopUpdate(2.0, 2.0, 1.0)
 
 	// 総資金に対して、許容可能な最大ドローダウンを設定する
 
@@ -37,7 +37,7 @@ func main() {
 		fmt.Printf("ランダムにシグナルを作成し、結果を確認\n")
 
 		useRandomSeed := true // trueはランダム値、falseは固定値
-		attempts := 3         // useRandomSeed := true の時、ランダム値試行を繰り返す回数
+		attempts := 1         // useRandomSeed := true の時、ランダム値試行を繰り返す回数
 
 		// 許容ドローダウン値を渡す
 		random_signals.RunRandomSignals(&filePath, &totalFunds, params, useRandomSeed, attempts)

@@ -21,8 +21,13 @@ func PrintResults(results []ml_stockdata.OptimizedResult, elapsedTime time.Durat
 	})
 
 	// トップ5の最良結果と最悪結果を取得
-	bestTop5 := results[:5]
-	worstTop5 := results[len(results)-5:]
+	topN := 5
+	if len(results) < 5 {
+		topN = len(results)
+	}
+
+	bestTop := results[:topN]
+	worstTop := results[len(results)-topN:]
 
 	// 共通情報を表示
 	if opts.ModelName != "" {
@@ -37,14 +42,14 @@ func PrintResults(results []ml_stockdata.OptimizedResult, elapsedTime time.Durat
 	fmt.Println("LC:ロスカット, TT:トレリングストップトリガ, TU:TS更新値, WR:勝率, CP:連続益, CL:連続損, PL:損益率, TW:総勝数, TL:総負数, AP:平均益, AL:平均損, MD:最大ドローダウン, SR:シャープレシオ, RR:リスクリワード, EV:期待値")
 
 	// 結果を表示
-	fmt.Println("  BEST 5:")
-	for _, result := range bestTop5 {
+	fmt.Println("  BEST:")
+	for _, result := range bestTop {
 		fmt.Printf("    [ LC: %.1f%%, TT: %.1f%%, TU: %.1f%%, WR: %.1f%%, CP: %.1f%%, CL: %.1f%%, PL: %.1f%%, TW: %d, TL: %d, AP: %.1f%%, AL: %.1f%%, MD: %.1f%%, SR: %.1f, RR: %.1f, EV: %.1f%% ]\n",
 			result.StopLossPercentage, result.TrailingStopTrigger, result.TrailingStopUpdate, result.WinRate, result.MaxConsecutiveProfit, result.MaxConsecutiveLoss, result.ProfitLoss,
 			result.TotalWins, result.TotalLosses, result.AverageProfit, result.AverageLoss, result.MaxDrawdown, result.SharpeRatio, result.RiskRewardRatio, result.ExpectedValue)
 	}
-	fmt.Println("  WORST 5:")
-	for _, result := range worstTop5 {
+	fmt.Println("  WORST:")
+	for _, result := range worstTop {
 		fmt.Printf("    [ LC: %.1f%%, TT: %.1f%%, TU: %.1f%%, WR: %.1f%%, CP: %.1f%%, CL: %.1f%%, PL: %.1f%%, TW: %d, TL: %d, AP: %.1f%%, AL: %.1f%%, MD: %.1f%%, SR: %.1f, RR: %.1f, EV: %.1f%% ]\n",
 			result.StopLossPercentage, result.TrailingStopTrigger, result.TrailingStopUpdate, result.WinRate, result.MaxConsecutiveProfit, result.MaxConsecutiveLoss, result.ProfitLoss,
 			result.TotalWins, result.TotalLosses, result.AverageProfit, result.AverageLoss, result.MaxDrawdown, result.SharpeRatio, result.RiskRewardRatio, result.ExpectedValue)

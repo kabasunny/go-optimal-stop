@@ -1,124 +1,141 @@
 package trading
 
 import (
+	"fmt"
 	"go-optimal-stop/internal/ml_stockdata"
 	"math"
 	"sort"
 	"time"
 )
 
-// TradingStrategy 関数は、与えられた株価データとトレーディングパラメータに基づいて総利益、勝率、最大ポジティブストリーク、最大ネガティブストリーク、その他の指標を返す
+// TradingStrategy 関数は、与えられた株価データとトレーディングパラメータに基づいて総利益、勝率、その他の指標を返す
 func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (float64, float64, float64, float64, int, int, float64, float64, float64, float64, float64, float64, error) {
+	signals := []struct {
+		Symbol     string
+		SignalDate time.Time
+		Priority   int64
+	}{}
 
-	// ここで総資金の変数を用意する、（前提：どの銘柄のシグナルを優先するか）
-	// currentTotalFunds := *totalFunds
-
-	totalProfitLoss := 0.0         // 全体の利益を追跡
-	winCount := 0                  // 勝ちトレードのカウント
-	totalCount := 0                // 全トレードのカウント
-	var tradeResults []tradeResult // トレード結果を保持するスライス
-
-	// 各シンボルデータをループ処理
+	// 各銘柄のシグナルを取得し、日付順にソート
 	for _, symbolData := range response.SymbolData {
-		previousEndDate := time.Time{} // 前回の終了日を記録する変数
-
-		// 各シグナルをループ処理
 		for _, signal := range symbolData.Signals {
-			startDate, err := parseDate(signal) // シグナルの日付を解析
+			date, err := parseDate(signal)
 			if err != nil {
-				continue
+				fmt.Println("skip")
+				continue // 日付の解析に失敗した場合はスキップ
+
 			}
-
-			// 前回の終了日と開始日が重なる場合、次の開始日に移る
-			if !previousEndDate.IsZero() && startDate.Before(previousEndDate) {
-				continue
-			}
-
-			// トレード戦略を実行し、利益を計算
-			purchaseDate, endDate, profitLoss, _, _, err := singleTradingStrategy(&symbolData.DailyData, startDate, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
-			if err != nil {
-				continue
-			}
-
-			totalProfitLoss += profitLoss // 総利益に加算
-			totalCount++                  // トレード数をインクリメント
-			if profitLoss > 0 {
-				winCount++ // 勝ちトレードの場合、勝ち数をインクリメント
-			}
-
-			// トレード結果をスライスに追加
-			tradeResults = append(tradeResults, tradeResult{
-				Symbol:     symbolData.Symbol,
-				Date:       purchaseDate,
-				ProfitLoss: profitLoss,
-			})
-
-			// 前回の終了日を更新
-			previousEndDate = endDate
+			signals = append(signals, struct {
+				Symbol     string
+				SignalDate time.Time
+				Priority   int64
+			}{symbolData.Symbol, date, symbolData.Priority})
 		}
 	}
 
-	// トレード結果をシンボルと日付でソート
-	sort.Slice(tradeResults, func(i, j int) bool {
-		if tradeResults[i].Symbol == tradeResults[j].Symbol {
-			return tradeResults[i].Date.Before(tradeResults[j].Date)
+	// シグナルを日付順、優先順にソート
+	sort.Slice(signals, func(i, j int) bool {
+		if signals[i].SignalDate.Equal(signals[j].SignalDate) {
+			return signals[i].Priority < signals[j].Priority // シグナル日付が同じ場合、Priorityが小さい方が優先
 		}
-		return tradeResults[i].Symbol < tradeResults[j].Symbol
+		return signals[i].SignalDate.Before(signals[j].SignalDate)
 	})
 
-	// 最大ポジティブストリークと最大ネガティブストリークを計算
-	maxPositiveStreak, maxNegativeStreak := calculateStreaks(tradeResults)
+	activeTrades := make(map[string]tradeRecord) // 各シンボルのホールド状態
 
-	// 勝率を計算
-	winRate := float64(winCount) / float64(totalCount) * 100
+	currentTotalFunds := *totalFunds // 総資金の初期化
+	totalProfitLoss := 0.0           // 全体の利益を追跡
+	winCount, totalCount := 0, 0     // 勝ちトレード数と総トレード数
+	var tradeResults []tradeRecord   // トレード結果を保持するスライス
 
-	// 平均利益率と平均損失率を計算
-	var totalProfit, totalLoss float64
-	if winCount > 0 {
-		for _, result := range tradeResults {
-			if result.ProfitLoss > 0 {
-				totalProfit += result.ProfitLoss
-			} else {
-				totalLoss += result.ProfitLoss
+	// シンボルごとのエグジット情報を保持するマップ
+	exitMap := make(map[time.Time][]tradeRecord)
+
+	// ---- 既存のエグジット情報を exitMap に格納 ----
+	for _, record := range activeTrades {
+		exitMap[record.ExitDate] = append(exitMap[record.ExitDate], record)
+	}
+
+	fmt.Print(signals)
+
+	// ---- シグナルの処理 ----
+	for _, signal := range signals {
+		// (1) エグジット処理：現在の signal.SignalDate に対応するエグジット日があるか確認
+		if exits, exists := exitMap[signal.SignalDate]; exists {
+			for _, exit := range exits {
+				currentTotalFunds += int(exit.ExitPrice) // 資金を戻す
+				totalProfitLoss += exit.ProfitLoss
+				tradeResults = append(tradeResults, exit) // トレード結果を保存
+				delete(activeTrades, exit.Symbol)         // ホールド解除
 			}
+			delete(exitMap, signal.SignalDate) // エグジット済みのデータを削除
+		}
+
+		// (2) 既にホールド中ならスキップ
+		if _, holding := activeTrades[signal.Symbol]; holding {
+			continue
+		}
+
+		// (3) シンボルのデータを検索してエントリー処理
+		for _, symbolData := range response.SymbolData {
+			if symbolData.Symbol != signal.Symbol {
+				fmt.Printf("    スキップ: 銘柄 %s は既にホールド中\n", signal.Symbol) // 【デバッグ用】 ホールド中のためスキップをログ出力
+				continue
+			}
+
+			// ---- エントリー資金計算 ----
+			_, _, entryCost, err := determinePositionSize(currentTotalFunds, &symbolData.DailyData, signal.SignalDate)
+			if err != nil || entryCost == 0 {
+				// fmt.Println("        エントリーコスト 0 のためスキップ") // 【デバッグ用】 エントリーコスト0でスキップをログ出力
+				continue
+			}
+
+			currentTotalFunds -= int(entryCost) // 購入資金を引く
+
+			// ---- トレード実行 ----
+			purchaseDate, exitDate, profitLoss, _, exitPrice, err := singleTradingStrategy(
+				&symbolData.DailyData, signal.SignalDate, stopLossPercentage, trailingStopTrigger, trailingStopUpdate,
+			)
+			if err != nil {
+				continue
+			}
+
+			// ---- エントリー情報の保存 ----
+			activeTrades[signal.Symbol] = tradeRecord{
+				Symbol:     signal.Symbol,
+				EntryDate:  purchaseDate,
+				ExitDate:   exitDate,
+				ProfitLoss: profitLoss,
+				EntryCost:  entryCost,
+				ExitPrice:  exitPrice,
+			}
+
+			// エグジット情報も `exitMap` に追加
+			exitMap[exitDate] = append(exitMap[exitDate], tradeRecord{
+				Symbol:     signal.Symbol,
+				EntryDate:  purchaseDate,
+				ExitDate:   exitDate,
+				ProfitLoss: profitLoss,
+				EntryCost:  entryCost,
+				ExitPrice:  exitPrice,
+			})
 		}
 	}
-	averageProfit := 0.0
-	averageLoss := 0.0
-	if winCount > 0 {
-		averageProfit = totalProfit / float64(winCount)
-	}
-	if totalCount-winCount > 0 {
-		averageLoss = totalLoss / float64(totalCount-winCount)
-	}
 
-	// 最大ドローダウンを計算
-	// 後ほど、総資金をベースに計算を行う
+	// 計算処理（勝率・リスク管理指標）
+	winRate := float64(winCount) / float64(totalCount) * 100
+	averageProfit, averageLoss := calculateAverages(tradeResults)
 	maxDrawdown := calculateMaxDrawdown(tradeResults)
-
-	// 超過リターンを計算
-	excessReturns := []float64{}
-	for _, result := range tradeResults {
-		excessReturns = append(excessReturns, result.ProfitLoss)
-	}
-
-	// シャープレシオを計算（リスクフリーレートを0と仮定）
-	sharpeRatio := 0.0
-	if stdDev := standardDeviation(excessReturns); stdDev > 0 {
-		sharpeRatio = calculateSharpeRatio(tradeResults, 0)
-	}
-
-	// リスクリワード比を計算
+	sharpeRatio := calculateSharpeRatio(tradeResults, 0)
 	riskRewardRatio := 0.0
 	if averageLoss != 0 {
 		riskRewardRatio = averageProfit / math.Abs(averageLoss)
 	}
 
-	// 期待値を計算（パーセンテージ表示）
 	expectedValue := 0.0
 	if totalCount > 0 {
 		expectedValue = ((winRate * averageProfit) - ((100 - winRate) * averageLoss)) / 100
 	}
 
-	return totalProfitLoss, winRate, maxPositiveStreak, maxNegativeStreak, winCount, totalCount - winCount, averageProfit, averageLoss, maxDrawdown, sharpeRatio, riskRewardRatio, expectedValue, nil
+	return totalProfitLoss, winRate, 0, 0, winCount, totalCount - winCount, averageProfit, averageLoss, maxDrawdown, sharpeRatio, riskRewardRatio, expectedValue, nil
 }
