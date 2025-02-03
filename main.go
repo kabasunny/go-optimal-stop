@@ -22,9 +22,9 @@ func main() {
 
 	// Parameters構造体を作成し、関数を使ってパラメータを設定
 	params := &ml_stockdata.Parameters{}
-	params.SetStopLoss(2.0, 5.0, 1.0)
-	params.SetTrailingStop(5.0, 8.0, 1.0)
-	params.SetTrailingStopUpdate(2.0, 5.0, 1.0)
+	params.SetStopLoss(2.0, 2.0, 1.0)
+	params.SetTrailingStop(5.0, 5.0, 1.0)
+	params.SetTrailingStopUpdate(2.0, 2.0, 1.0)
 
 	// 総資金に対して、許容可能な最大ドローダウンを設定する
 

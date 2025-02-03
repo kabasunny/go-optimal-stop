@@ -45,9 +45,9 @@ func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Par
 	}
 
 	// 総試行回数を算出
-	trials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates) * len(stockResponse.SymbolData)
-	totalTrials := trials * numSignals
-	fmt.Printf("パラメタ組合せ: %d, 正解ラベル数: %d, 総試行回数: %d\n", trials, numSignals, totalTrials)
+	trials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates)
+	totalTrials := trials * numSignals * len(stockResponse.SymbolData)
+	fmt.Printf("パラメタ組合せ: %d, シグナル数: %d, 総試行回数: %d\n", trials, numSignals, totalTrials)
 
 	// // 正解ラベルのシグナルで、パラメータの最適化を実行
 	// _, _, results := OptimizeParameters(&stockResponse, params)

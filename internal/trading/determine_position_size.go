@@ -8,7 +8,7 @@ import (
 )
 
 // determinePositionSize は、ATRに基づきポジションサイズとエントリー価格、エントリーコストを決定
-func determinePositionSize(currentFunds int, dailyData *[]ml_stockdata.InMLDailyData, signalDate time.Time) (float64, float64, float64, error) {
+func determinePositionSize(portfolioValue int, dailyData *[]ml_stockdata.InMLDailyData, signalDate time.Time) (float64, float64, float64, error) {
 	const commissionRate = 0.2 // 手数料率（例: 0.1%）
 	const unitSize = 100       // 単元数
 
@@ -28,7 +28,7 @@ func determinePositionSize(currentFunds int, dailyData *[]ml_stockdata.InMLDaily
 	// fmt.Printf("  calculateATR 完了: 2ATR: %.2f\n", atr*2) // 【デバッグ用】 ATR をログ出力
 
 	// リスク許容度を定義（例: 総資金の2%）
-	riskPerTrade := 0.01 * float64(currentFunds)
+	riskPerTrade := 0.01 * float64(portfolioValue)
 	// fmt.Printf("  リスク許容額: %.2f (総資金の2%%)\n", riskPerTrade) // 【デバッグ用】 リスク許容額をログ出力
 
 	// ポジションサイズを計算（リスク許容度 / ATR）
@@ -51,8 +51,8 @@ func determinePositionSize(currentFunds int, dailyData *[]ml_stockdata.InMLDaily
 	// fmt.Printf("  エントリーコスト計算: エントリー価格: %.2f, ポジションサイズ: %.2f, 手数料: %.2f, 合計: %.2f\n", entryPrice, positionSize, commission, totalEntryCost) // 【デバッグ用】 エントリーコスト計算の詳細をログ出力
 
 	// 総資金に対してエントリーコストが足りなければエントリーコストは0にする
-	if totalEntryCost > float64(currentFunds) {
-		fmt.Println("  エントリーコストが初期資金を超えるため、エントリーコストを 0 に設定") // 【デバッグ用】 資金不足でエントリーコストが 0 になる場合のログ
+	if totalEntryCost > float64(portfolioValue) {
+		// fmt.Println("  エントリーコストが初期資金を超えるため、エントリーコストを 0 に設定") // 【デバッグ用】 資金不足でエントリーコストが 0 になる場合のログ
 		return 0, 0, 0, nil
 	}
 	if positionSize == 0 { // ポジションサイズが 0 の場合もエントリーコストを 0 にする
