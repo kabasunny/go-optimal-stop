@@ -92,7 +92,7 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 
 					// 資金を更新した後の状態を表示
 					// 資金を更新した後の状態を表示
-					fmt.Printf("エグジット日: %s エントリ日: %s シンボル: %s, ポートフォリオ: %d, エントリ金額: %.0f, 購入可能枠: %d\n", exit.ExitDate.Format("2006-01-02"), exit.EntryDate.Format("2006-01-02"), exit.Symbol, portfolioValue, exit.EntryCost, availableFunds)
+					fmt.Printf("エグジット日: %s エントリ日: %s シンボル: %s, ポートフgiォリオ: %d, エントリ金額: %.0f, 購入可能枠: %d\n", exit.ExitDate.Format("2006-01-02"), exit.EntryDate.Format("2006-01-02"), exit.Symbol, portfolioValue, exit.EntryCost, availableFunds)
 				}
 				delete(exitMap, exitDate) // エグジット済みのデータを削除
 			}
