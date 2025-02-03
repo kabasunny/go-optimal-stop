@@ -65,7 +65,7 @@ func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Par
 			modelNames = append(modelNames, modelName)
 		}
 	}
-	fmt.Printf("シミュレーションモデル名: %v\n", modelNames)
+	fmt.Printf("実行SIM一覧: %v\n", modelNames)
 
 	for _, modelName := range modelNames {
 		// すべてのシンボルに対してシグナルを一斉に置き換える

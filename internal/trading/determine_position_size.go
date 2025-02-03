@@ -13,7 +13,7 @@ func determinePositionSize(currentFunds int, dailyData *[]ml_stockdata.InMLDaily
 	const unitSize = 100       // 単元数
 
 	// fmt.Println("determinePositionSize 開始")                                               // 【デバッグ用】 関数開始をログ出力
-	fmt.Printf("  総資金: %d, シグナル日付: %s\n", currentFunds, signalDate.Format("2006-01-02")) // 【デバッグ用】 初期資金とシグナル日付をログ出力
+	// fmt.Printf("  総資金: %d, シグナル日付: %s\n", currentFunds, signalDate.Format("2006-01-02")) // 【デバッグ用】 初期資金とシグナル日付をログ出力
 
 	// エントリー価格を取得
 	_, entryPrice, err := findPurchaseDate(*dailyData, signalDate) // entryData も取得するように修正
@@ -25,11 +25,11 @@ func determinePositionSize(currentFunds int, dailyData *[]ml_stockdata.InMLDaily
 
 	// ATRを計算
 	atr := calculateATR(dailyData, signalDate)
-	fmt.Printf("  calculateATR 完了: 2ATR: %.2f\n", atr*2) // 【デバッグ用】 ATR をログ出力
+	// fmt.Printf("  calculateATR 完了: 2ATR: %.2f\n", atr*2) // 【デバッグ用】 ATR をログ出力
 
 	// リスク許容度を定義（例: 総資金の2%）
 	riskPerTrade := 0.01 * float64(currentFunds)
-	fmt.Printf("  リスク許容額: %.2f (総資金の2%%)\n", riskPerTrade) // 【デバッグ用】 リスク許容額をログ出力
+	// fmt.Printf("  リスク許容額: %.2f (総資金の2%%)\n", riskPerTrade) // 【デバッグ用】 リスク許容額をログ出力
 
 	// ポジションサイズを計算（リスク許容度 / ATR）
 	positionSize := 0.0
@@ -38,7 +38,7 @@ func determinePositionSize(currentFunds int, dailyData *[]ml_stockdata.InMLDaily
 	} else {
 		fmt.Println("  警告: ATR が 0 のため、ポジションサイズを 0 に設定") // 【デバッグ用】 ATR が 0 の場合の警告ログ
 	}
-	fmt.Printf("  ポジションサイズ (調整前): %.2f\n", positionSize) // 【デバッグ用】 調整前のポジションサイズをログ出力
+	// fmt.Printf("  ポジションサイズ (調整前): %.2f\n", positionSize) // 【デバッグ用】 調整前のポジションサイズをログ出力
 
 	// ポジションサイズを調整して単元数の倍数にする
 	positionSize = math.Floor(positionSize/float64(unitSize)) * float64(unitSize) // Floor を使用して単元未満を切り捨て
@@ -48,7 +48,7 @@ func determinePositionSize(currentFunds int, dailyData *[]ml_stockdata.InMLDaily
 	entryCost := entryPrice * positionSize
 	commission := entryCost * (commissionRate / 100)
 	totalEntryCost := entryCost + commission
-	fmt.Printf("  エントリーコスト計算: エントリー価格: %.2f, ポジションサイズ: %.2f, 手数料: %.2f, 合計: %.2f\n", entryPrice, positionSize, commission, totalEntryCost) // 【デバッグ用】 エントリーコスト計算の詳細をログ出力
+	// fmt.Printf("  エントリーコスト計算: エントリー価格: %.2f, ポジションサイズ: %.2f, 手数料: %.2f, 合計: %.2f\n", entryPrice, positionSize, commission, totalEntryCost) // 【デバッグ用】 エントリーコスト計算の詳細をログ出力
 
 	// 総資金に対してエントリーコストが足りなければエントリーコストは0にする
 	if totalEntryCost > float64(currentFunds) {
@@ -60,7 +60,7 @@ func determinePositionSize(currentFunds int, dailyData *[]ml_stockdata.InMLDaily
 		return 0, 0, 0, nil
 	}
 
-	fmt.Printf("determinePositionSize 完了: ポジションサイズ: %.2f, エントリー価格: %.2f, エントリーコスト: %.2f\n", positionSize, entryPrice, totalEntryCost) // 【デバッグ用】 関数終了時の結果をログ出力
+	// fmt.Printf("determinePositionSize 完了: ポジションサイズ: %.2f, エントリー価格: %.2f, エントリーコスト: %.2f\n", positionSize, entryPrice, totalEntryCost) // 【デバッグ用】 関数終了時の結果をログ出力
 	return positionSize, entryPrice, totalEntryCost, nil
 }
 
@@ -71,7 +71,7 @@ func calculateATR(dailyData *[]ml_stockdata.InMLDailyData, signalDate time.Time)
 	trueRanges := make([]float64, 0, n)
 
 	// fmt.Println("calculateATR 開始")                                              // 【デバッグ用】 関数開始をログ出力
-	fmt.Printf("  シグナル日付: %s, 計算期間: %d日\n", signalDate.Format("2006-01-02"), n) // 【デバッグ用】 シグナル日付と計算期間をログ出力
+	// fmt.Printf("  シグナル日付: %s, 計算期間: %d日\n", signalDate.Format("2006-01-02"), n) // 【デバッグ用】 シグナル日付と計算期間をログ出力
 
 	// signalDate以前のn日間のデータを収集
 	for i := len(*dailyData) - 1; i >= 0; i-- {
