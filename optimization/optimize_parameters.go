@@ -22,28 +22,16 @@ func OptimizeParameters(response *ml_stockdata.InMLStockResponse, totalFunds *in
 				go func(totalFunds *int, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) {
 					defer wg.Done() // 処理終了時にWaitGroupのカウントをデクリメント
 					// トレーディング戦略を実行し、結果を取得
-					totalProfitLoss, winRate, maxConsecutiveProfit, maxConsecutiveLos, totalWins, totalLosses, averageProfit, averageLoss, maxDrawdown, sharpeRatio, riskRewardRatio, expectedValue, err := trading.TradingStrategy(response, totalFunds, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
+					result, err := trading.TradingStrategy(response, totalFunds, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
 					if err != nil {
 						return
 					}
-					// 結果をOptimizedResult構造体に格納
-					result := ml_stockdata.OptimizedResult{
-						StopLossPercentage:   stopLossPercentage,
-						TrailingStopTrigger:  trailingStopTrigger,
-						TrailingStopUpdate:   trailingStopUpdate,
-						ProfitLoss:           totalProfitLoss,
-						WinRate:              winRate,
-						MaxConsecutiveProfit: maxConsecutiveProfit,
-						MaxConsecutiveLoss:   maxConsecutiveLos,
-						TotalWins:            totalWins,
-						TotalLosses:          totalLosses,
-						AverageProfit:        averageProfit,
-						AverageLoss:          averageLoss,
-						MaxDrawdown:          maxDrawdown,
-						SharpeRatio:          sharpeRatio,
-						RiskRewardRatio:      riskRewardRatio,
-						ExpectedValue:        expectedValue,
-					}
+					// パラメータをOptimizedResult構造体に追加
+					result.StopLossPercentage = stopLossPercentage
+					result.TrailingStopTrigger = trailingStopTrigger
+					result.TrailingStopUpdate = trailingStopUpdate
+
+					// 結果をスライスに追加
 					mu.Lock()                         // 排他制御開始
 					results = append(results, result) // 結果をスライスに追加
 					mu.Unlock()                       // 排他制御終了
@@ -55,8 +43,6 @@ func OptimizeParameters(response *ml_stockdata.InMLStockResponse, totalFunds *in
 	wg.Wait() // すべてのGoルーチンの終了を待機
 
 	// 結果をProfitLoss、StopLossPercentage、TrailingStopTrigger、TrailingStopUpdateでソート
-	// とりあえず仮で以下のソートにしているが、
-	// 最終的には、ドローダウンによる心理的、資金的な現実性を加味したソートを行う
 	sort.Slice(results, func(i, j int) bool {
 		if results[i].ProfitLoss == results[j].ProfitLoss {
 			if results[i].StopLossPercentage == results[j].StopLossPercentage {
