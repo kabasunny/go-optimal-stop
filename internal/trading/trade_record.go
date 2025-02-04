@@ -9,9 +9,9 @@ type tradeRecord struct {
 	Symbol       string
 	EntryDate    time.Time
 	ExitDate     time.Time
-	ProfitLoss   float64
-	EntryCost    float64
-	ExitPrice    float64
-	PositionSize float64
-	EntryPrice   float64
+	ProfitLoss   float64 // ％
+	EntryCost    float64 // 一株の価格 × 株数 + 手数料
+	PositionSize float64 // 株数
+	EntryPrice   float64 // 一株の価格
+	ExitPrice    float64 // 一株の価格
 }

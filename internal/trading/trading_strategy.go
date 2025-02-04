@@ -10,6 +10,9 @@ import (
 
 // / TradingStrategy 関数は、与えられた株価データとトレーディングパラメータに基づいて総利益、勝率、その他の指標を返す
 func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (float64, float64, float64, float64, int, int, float64, float64, float64, float64, float64, float64, error) {
+
+	// エントリー可能金額までのエントリー順序を決定する
+	// まずは空のスライスを作成
 	signals := []struct {
 		Symbol     string
 		SignalDate time.Time
@@ -38,7 +41,7 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 	}
 
 	// シグナルを日付順、優先順にソート
-	sort.Slice(signals, func(i, j int) bool {
+	sort.Slice(signals, func(i, j int) bool { // インデックス i と j の要素を比較し、i が j よりも前に来るべき → true
 		if signals[i].SignalDate.Equal(signals[j].SignalDate) {
 			return signals[i].Priority < signals[j].Priority // シグナル日付が同じ場合、Priorityが小さい方が優先
 		}
@@ -65,24 +68,12 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 		for exitDate, exits := range exitMap {
 			if signal.SignalDate.After(exitDate) {
 				for _, exit := range exits {
-					// 資金を更新する前の状態を表示（必要に応じて）
-					// fmt.Printf("エグジット前 - シンボル: %s, originalTotalFunds: %d, availableFunds: %d\n", exit.Symbol, originalTotalFunds, availableFunds)
-
-					// 使用可能資金にExitPrice × ポジションサイズを加算
-					// exitAmount := exit.ExitPrice * exit.PositionSize
-					// availableFunds += int(exitAmount)
 
 					// 総資金に利益率 / 100% × ポジションサイズ × エントリー価格を加算
 					profitInAmount := exit.ProfitLoss / 100 * exit.PositionSize * exit.EntryPrice
 					portfolioValue += int(profitInAmount)
 
-					// デバッグ用の変数表示
-					// fmt.Printf("デバッグ情報 - シンボル: %s\n", exit.Symbol)
-					// fmt.Printf("  exitAmount: %.2f, exit.ExitPrice: %.2f, exit.PositionSize: %.2f\n", exitAmount, exit.ExitPrice, exit.PositionSize)
-					// fmt.Printf("  profitInAmount: %.2f, exit.ProfitLoss: %.2f, exit.PositionSize: %.2f, exit.EntryPrice: %.2f\n", profitInAmount, exit.ProfitLoss, exit.PositionSize, exit.EntryPrice)
-
-					// その他の更新
-					totalProfitLoss += exit.ProfitLoss
+					// 1トレードあたりの損益率の単純加算
 					if exit.ProfitLoss > 0 {
 						winCount++
 					}
@@ -91,8 +82,15 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 					delete(activeTrades, exit.Symbol)         // ホールド解除
 
 					// 資金を更新した後の状態を表示
-					// 資金を更新した後の状態を表示
-					fmt.Printf("エグジット日: %s エントリ日: %s シンボル: %s, ポートフgiォリオ: %d, エントリ金額: %.0f, 購入可能枠: %d\n", exit.ExitDate.Format("2006-01-02"), exit.EntryDate.Format("2006-01-02"), exit.Symbol, portfolioValue, exit.EntryCost, availableFunds)
+					fmt.Printf("%s (%s) 銘柄:%-4s [エントリ:%5.0f - %5.0f :エグジット] 損益/トレード: %4.1f%%, 総資産:%10d\n",
+						exit.ExitDate.Format("2006-01-02"),
+						exit.EntryDate.Format("2006-01-02"),
+						exit.Symbol,
+						exit.EntryPrice,
+						exit.ExitPrice,
+						exit.ProfitLoss,
+						portfolioValue)
+
 				}
 				delete(exitMap, exitDate) // エグジット済みのデータを削除
 			}
@@ -117,7 +115,7 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 				continue
 			}
 			// ---- エントリー資金計算 ----
-			positionSize, entryPrice, entryCost, err := determinePositionSize(portfolioValue, &symbolData.DailyData, signal.SignalDate)
+			positionSize, entryPrice, entryCost, err := determinePositionSize(portfolioValue, availableFunds, &symbolData.DailyData, signal.SignalDate)
 			if err != nil || entryCost == 0 {
 				// fmt.Println("エントリーコスト 0 のためスキップ") // 【デバッグ用】 エントリーコスト0でスキップをログ出力
 				continue
@@ -148,9 +146,9 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 				ExitDate:     exitDate,
 				ProfitLoss:   profitLoss,
 				EntryCost:    entryCost,
-				ExitPrice:    exitPrice,
 				PositionSize: positionSize,
-				EntryPrice:   entryPrice, // EntryPriceを保存
+				EntryPrice:   entryPrice,
+				ExitPrice:    exitPrice,
 			}
 			// エグジット情報も `exitMap` に追加
 			exitMap[exitDate] = append(exitMap[exitDate], tradeRecord{
@@ -159,9 +157,9 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 				ExitDate:     exitDate,
 				ProfitLoss:   profitLoss,
 				EntryCost:    entryCost,
-				ExitPrice:    exitPrice,
 				PositionSize: positionSize,
-				EntryPrice:   entryPrice, // EntryPriceを保存
+				EntryPrice:   entryPrice,
+				ExitPrice:    exitPrice,
 			})
 			// fmt.Println("exitMap[exitDate]:", exitMap)
 		}

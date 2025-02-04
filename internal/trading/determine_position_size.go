@@ -1,67 +1,53 @@
 package trading
 
 import (
-	"fmt" // 【デバッグ用】 fmt パッケージをインポート
+	// 【デバッグ用】 fmt パッケージをインポート
 	"go-optimal-stop/internal/ml_stockdata"
 	"math"
 	"time"
 )
 
 // determinePositionSize は、ATRに基づきポジションサイズとエントリー価格、エントリーコストを決定
-func determinePositionSize(portfolioValue int, dailyData *[]ml_stockdata.InMLDailyData, signalDate time.Time) (float64, float64, float64, error) {
-	const commissionRate = 0.2 // 手数料率（例: 0.1%）
+func determinePositionSize(portfolioValue int, availableFundsInt int, dailyData *[]ml_stockdata.InMLDailyData, signalDate time.Time) (float64, float64, float64, error) {
+	const commissionRate = 0.2 // 手数料率（例: 0.2%）
 	const unitSize = 100       // 単元数
 
-	// fmt.Println("determinePositionSize 開始")                                               // 【デバッグ用】 関数開始をログ出力
-	// fmt.Printf("  総資金: %d, シグナル日付: %s\n", currentFunds, signalDate.Format("2006-01-02")) // 【デバッグ用】 初期資金とシグナル日付をログ出力
+	availableFunds := float64(availableFundsInt)
 
 	// エントリー価格を取得
-	_, entryPrice, err := findPurchaseDate(*dailyData, signalDate) // entryData も取得するように修正
+	_, entryPrice, err := findPurchaseDate(*dailyData, signalDate)
 	if err != nil {
-		fmt.Printf("  findPurchaseDate エラー: %v\n", err) // 【デバッグ用】 findPurchaseDate エラーをログ出力
-		return 0, 0, 0, err                             // エントリー価格の取得に失敗した場合はエラーを返す
+		return 0, 0, 0, err
 	}
-	// fmt.Printf("  findPurchaseDate 完了: エントリー価格: %.2f, 日付: %s\n", entryPrice, entryData.Date) // 【デバッグ用】 エントリー価格と日付をログ出力
 
 	// ATRを計算
 	atr := calculateATR(dailyData, signalDate)
-	// fmt.Printf("  calculateATR 完了: 2ATR: %.2f\n", atr*2) // 【デバッグ用】 ATR をログ出力
 
-	// リスク許容度を定義（例: 総資金の2%）
-	riskPerTrade := 0.01 * float64(portfolioValue)
-	// fmt.Printf("  リスク許容額: %.2f (総資金の2%%)\n", riskPerTrade) // 【デバッグ用】 リスク許容額をログ出力
+	// リスク許容度を定義（例: 使用可能な資金の2%）
+	riskPerTrade := 0.01 * availableFunds
 
 	// ポジションサイズを計算（リスク許容度 / ATR）
 	positionSize := 0.0
-	if atr != 0 { // ATR が 0 でないことを確認
+	if atr != 0 {
 		positionSize = riskPerTrade / (atr * 2)
-	} else {
-		fmt.Println("  警告: ATR が 0 のため、ポジションサイズを 0 に設定") // 【デバッグ用】 ATR が 0 の場合の警告ログ
 	}
-	// fmt.Printf("  ポジションサイズ (調整前): %.2f\n", positionSize) // 【デバッグ用】 調整前のポジションサイズをログ出力
 
 	// ポジションサイズを調整して単元数の倍数にする
-	positionSize = math.Floor(positionSize/float64(unitSize)) * float64(unitSize) // Floor を使用して単元未満を切り捨て
-	// fmt.Printf("  ポジションサイズ (調整後): %.2f (単元数: %d)\n", positionSize, unitSize)      // 【デバッグ用】 調整後のポジションサイズと単元数をログ出力
+	positionSize = math.Floor(positionSize/float64(unitSize)) * float64(unitSize)
 
 	// 手数料を加味してエントリーコストを計算
 	entryCost := entryPrice * positionSize
 	commission := entryCost * (commissionRate / 100)
 	totalEntryCost := entryCost + commission
-	// fmt.Printf("  エントリーコスト計算: エントリー価格: %.2f, ポジションサイズ: %.2f, 手数料: %.2f, 合計: %.2f\n", entryPrice, positionSize, commission, totalEntryCost) // 【デバッグ用】 エントリーコスト計算の詳細をログ出力
 
-	// 総資金に対してエントリーコストが足りなければエントリーコストは0にする
-	if totalEntryCost > float64(portfolioValue) {
-		// fmt.Println("  エントリーコストが初期資金を超えるため、エントリーコストを 0 に設定") // 【デバッグ用】 資金不足でエントリーコストが 0 になる場合のログ
+	// 使用可能な資金に対してエントリーコストが足りるか確認
+	if totalEntryCost <= availableFunds && totalEntryCost <= float64(portfolioValue)/4 {
+		// 条件を満たす場合、ポジションサイズ、エントリー価格、エントリーコストを返す
+		return positionSize, entryPrice, totalEntryCost, nil
+	} else {
+		// 条件を満たさない場合はエントリーしない
 		return 0, 0, 0, nil
 	}
-	if positionSize == 0 { // ポジションサイズが 0 の場合もエントリーコストを 0 にする
-		fmt.Println("  ポジションサイズが 0 のため、エントリーコストを 0 に設定") // 【デバッグ用】 ポジションサイズが 0 の場合のエントリーコストを 0 にするログ
-		return 0, 0, 0, nil
-	}
-
-	// fmt.Printf("determinePositionSize 完了: ポジションサイズ: %.2f, エントリー価格: %.2f, エントリーコスト: %.2f\n", positionSize, entryPrice, totalEntryCost) // 【デバッグ用】 関数終了時の結果をログ出力
-	return positionSize, entryPrice, totalEntryCost, nil
 }
 
 // calculateATR は、過去一定期間のATR（Average True Range）を計算する
