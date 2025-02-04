@@ -49,15 +49,6 @@ func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Par
 	totalTrials := trials * numSignals * len(stockResponse.SymbolData)
 	fmt.Printf("パラメタ組合せ: %d, シグナル数: %d, 総試行回数: %d\n", trials, numSignals, totalTrials)
 
-	// // 正解ラベルのシグナルで、パラメータの最適化を実行
-	// _, _, results := OptimizeParameters(&stockResponse, params)
-
-	// // 実行時間を測定
-	// elapsedTime := time.Since(startTime)
-
-	// // 結果を表示
-	// PrintResults(results, elapsedTime)
-
 	// モデル名correct_labelを最初に配置し、あとはmodel_predictionsフィールドから自動抽出し
 	modelNames := []string{"correct_label"}
 	for modelName := range protoResponse.SymbolData[0].ModelPredictions {
@@ -90,7 +81,7 @@ func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Par
 		modelElapsedTime := time.Since(modelStartTime)
 
 		// モデルごとの結果を表示
-		PrintResults(modelResults, modelElapsedTime, WithModelName(modelName), WithSignalCount(signalCount))
+		_, _ = PrintAndReturnResults(modelResults, modelElapsedTime, WithModelName(modelName), WithSignalCount(signalCount))
 
 		// 元のシグナルに戻す
 		for i := range protoResponse.SymbolData {

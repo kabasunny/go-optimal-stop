@@ -47,6 +47,6 @@ func RunRandomSignals(filePath *string, totalFunds *int, params *ml_stockdata.Pa
 		elapsedTime := time.Since(startTime)
 
 		// 結果を表示
-		optimization.PrintResults(results, elapsedTime)
+		_, _ = optimization.PrintAndReturnResults(results, elapsedTime)
 	}
 }

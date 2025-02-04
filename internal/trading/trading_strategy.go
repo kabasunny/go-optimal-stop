@@ -139,29 +139,22 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 				// fmt.Println("トレード実行 skip")
 				continue
 			}
-			// ---- エントリー情報の保存 ----
-			activeTrades[signal.Symbol] = tradeRecord{
-				Symbol:       signal.Symbol,
-				EntryDate:    purchaseDate,
-				ExitDate:     exitDate,
-				ProfitLoss:   profitLoss,
-				EntryCost:    entryCost,
-				PositionSize: positionSize,
-				EntryPrice:   entryPrice,
-				ExitPrice:    exitPrice,
+			record := tradeRecord{
+				Symbol:         signal.Symbol,
+				EntryDate:      purchaseDate,
+				ExitDate:       exitDate,
+				ProfitLoss:     profitLoss,
+				EntryCost:      entryCost,
+				PositionSize:   positionSize,
+				EntryPrice:     entryPrice,
+				ExitPrice:      exitPrice,
+				PortfolioValue: portfolioValue,
 			}
+
+			// ---- エントリー情報の保存 ----
+			activeTrades[signal.Symbol] = record
 			// エグジット情報も `exitMap` に追加
-			exitMap[exitDate] = append(exitMap[exitDate], tradeRecord{
-				Symbol:       signal.Symbol,
-				EntryDate:    purchaseDate,
-				ExitDate:     exitDate,
-				ProfitLoss:   profitLoss,
-				EntryCost:    entryCost,
-				PositionSize: positionSize,
-				EntryPrice:   entryPrice,
-				ExitPrice:    exitPrice,
-			})
-			// fmt.Println("exitMap[exitDate]:", exitMap)
+			exitMap[exitDate] = append(exitMap[exitDate], record)
 		}
 	}
 
@@ -174,7 +167,7 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 	// 平均利益、平均損失の計算
 	averageProfit, averageLoss := calculateAverages(tradeResults)
 	// 最大ドローダウンの計算
-	maxDrawdown := calculateMaxDrawdown(tradeResults)
+	maxDrawdown, _ := calculateDrawdownAndDrawup(tradeResults)
 	// シャープレシオの計算（リスク対リターンの指標）
 	sharpeRatio := calculateSharpeRatio(tradeResults, 0)
 	// リスク報酬比率の計算

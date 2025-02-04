@@ -1,27 +1,35 @@
 package trading
 
-// 後ほど、総資金をベースに計算を行う
-// calculateMaxDrawdown は、トレード結果から最大ドローダウンを計算する
-func calculateMaxDrawdown(tradeResults []tradeRecord) float64 {
+// calculateDrawdownAndDrawup は、トレード結果から最大ドローダウンと最大上昇率を計算する
+func calculateDrawdownAndDrawup(tradeResults []tradeRecord) (float64, float64) {
 	if len(tradeResults) == 0 {
-		return 0
+		return 0, 0
 	}
 
 	maxDrawdown := 0.0
-	peak := 0.0             // 資産のピーク
-	currentCapital := 100.0 // 仮に100スタート（任意の基準）
+	maxDrawup := 0.0
+	peak := tradeResults[0].PortfolioValue   // 初期資産をピークとして設定
+	trough := tradeResults[0].PortfolioValue // 初期資産をトラフとして設定
 
 	for _, result := range tradeResults {
-		currentCapital += result.ProfitLoss // 累積資産の計算
-		if currentCapital > peak {
-			peak = currentCapital
+		// ドローダウンの計算
+		if result.PortfolioValue > peak {
+			peak = result.PortfolioValue
 		}
-
-		drawdown := (peak - currentCapital) / peak
+		drawdown := float64(peak-result.PortfolioValue) / float64(peak)
 		if drawdown > maxDrawdown {
 			maxDrawdown = drawdown
 		}
+
+		// 最大上昇率の計算
+		if result.PortfolioValue < trough {
+			trough = result.PortfolioValue
+		}
+		drawup := float64(result.PortfolioValue-trough) / float64(trough)
+		if drawup > maxDrawup {
+			maxDrawup = drawup
+		}
 	}
 
-	return maxDrawdown * 100 // パーセンテージ表示
+	return maxDrawdown * 100, maxDrawup * 100 // パーセンテージ表示
 }
