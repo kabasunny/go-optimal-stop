@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go-optimal-stop/internal/ml_stockdata"
+	"go-optimal-stop/internal/trading"
 	"go-optimal-stop/optimization"
 )
 
@@ -47,6 +48,10 @@ func RunRandomSignals(filePath *string, totalFunds *int, params *ml_stockdata.Pa
 		elapsedTime := time.Since(startTime)
 
 		// 結果を表示
-		_, _ = optimization.PrintAndReturnResults(results, elapsedTime)
+		bestparm, _ := optimization.PrintAndReturnResults(results, elapsedTime)
+
+		verbose := true
+		_, _ = trading.TradingStrategy(&stockResponse, totalFunds, bestparm.BestStopLossPercentage, bestparm.BestTrailingStopTrigger, bestparm.BestTrailingStopUpdate, verbose)
+
 	}
 }

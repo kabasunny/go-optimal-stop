@@ -7,6 +7,7 @@ import (
 
 	"go-optimal-stop/experiment_proto"
 	"go-optimal-stop/internal/ml_stockdata"
+	"go-optimal-stop/internal/trading"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -81,12 +82,16 @@ func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Par
 		modelElapsedTime := time.Since(modelStartTime)
 
 		// モデルごとの結果を表示
-		_, _ = PrintAndReturnResults(modelResults, modelElapsedTime, WithModelName(modelName), WithSignalCount(signalCount))
+		bestparm, _ := PrintAndReturnResults(modelResults, modelElapsedTime, WithModelName(modelName), WithSignalCount(signalCount))
+
+		verbose := true
+		_, _ = trading.TradingStrategy(&stockResponse, totalFunds, bestparm.BestStopLossPercentage, bestparm.BestTrailingStopTrigger, bestparm.BestTrailingStopUpdate, verbose)
 
 		// 元のシグナルに戻す
 		for i := range protoResponse.SymbolData {
 			stockResponse.SymbolData[i].Signals = originalSignals[i]
 		}
+
 	}
 
 }

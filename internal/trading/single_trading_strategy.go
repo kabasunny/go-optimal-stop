@@ -43,12 +43,7 @@ func singleTradingStrategy(data *[]ml_stockdata.InMLDailyData, startDate time.Ti
 	}
 
 	// 利益率を計算
-	profitLoss := (endPrice - purchasePrice) / purchasePrice * 100
-	if profitLoss > 0 {
-		profitLoss = roundDown(profitLoss)
-	} else if profitLoss < 0 {
-		profitLoss = roundUp(profitLoss)
-	}
+	profitLoss := roundDown((endPrice - purchasePrice) / purchasePrice * 100)
 
 	// 購入日、終了日、利益率、購入価格、終了価格を返す
 	return purchaseDate, endDate, profitLoss, purchasePrice, endPrice, nil

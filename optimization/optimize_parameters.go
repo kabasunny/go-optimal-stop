@@ -13,6 +13,7 @@ func OptimizeParameters(response *ml_stockdata.InMLStockResponse, totalFunds *in
 	var results []ml_stockdata.OptimizedResult // 最適化結果を格納するスライス
 	var mu sync.Mutex                          // 排他制御用のミューテックス
 	var wg sync.WaitGroup                      // 同期用のWaitGroup
+	verbose := false
 
 	// 各ストップロスパーセンテージ、トレーリングストップトリガー、トレーリングストップアップデートの組み合わせをループ処理
 	for _, stopLossPercentage := range params.StopLossPercentages {
@@ -22,7 +23,7 @@ func OptimizeParameters(response *ml_stockdata.InMLStockResponse, totalFunds *in
 				go func(totalFunds *int, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) {
 					defer wg.Done() // 処理終了時にWaitGroupのカウントをデクリメント
 					// トレーディング戦略を実行し、結果を取得
-					result, err := trading.TradingStrategy(response, totalFunds, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
+					result, err := trading.TradingStrategy(response, totalFunds, stopLossPercentage, trailingStopTrigger, trailingStopUpdate, verbose)
 					if err != nil {
 						return
 					}

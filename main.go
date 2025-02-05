@@ -14,7 +14,7 @@ func main() {
 
 	filePath := "../py-signal-buy/result/ml_stock_response/proto_kmeans-cluster_label_0.bin"
 
-	totalFunds := 3000000
+	totalFunds := 2000000
 
 	// 引数を定義
 	useRandom := flag.Bool("random", false, "Use random signals")
@@ -22,9 +22,9 @@ func main() {
 
 	// Parameters構造体を作成し、関数を使ってパラメータを設定
 	params := &ml_stockdata.Parameters{}
-	params.SetStopLoss(2.0, 2.0, 1.0)
-	params.SetTrailingStop(10.0, 10.0, 1.0)
-	params.SetTrailingStopUpdate(5.0, 5.0, 1.0)
+	params.SetStopLoss(2.0, 5.0, 1.0)
+	params.SetTrailingStop(10.0, 15.0, 1.0)
+	params.SetTrailingStopUpdate(2.0, 5.0, 1.0)
 
 	// 総資金に対して、許容可能な最大ドローダウンを設定する
 

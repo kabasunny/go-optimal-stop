@@ -9,8 +9,14 @@ import (
 )
 
 // TradingStrategy 関数は、与えられた株価データとトレーディングパラメータに基づいて最適なパラメータの組み合わせを見つける
-func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (ml_stockdata.OptimizedResult, error) {
+func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64, options ...bool) (ml_stockdata.OptimizedResult, error) {
 	var result ml_stockdata.OptimizedResult
+	var verbose bool
+
+	// verbose オプションをチェック
+	if len(options) > 0 {
+		verbose = options[0]
+	}
 
 	// パラメータを保存
 	result.StopLossPercentage = stopLossPercentage
@@ -32,7 +38,9 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 		for _, signal := range symbolData.Signals {
 			date, err := parseDate(signal)
 			if err != nil {
-				fmt.Println("signal skip")
+				if verbose {
+					fmt.Println("signal skip")
+				}
 				continue // 日付の解析に失敗した場合はスキップ
 			}
 			signals = append(signals, struct {
@@ -76,14 +84,17 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 					totalCount++
 					tradeResults = append(tradeResults, exit)
 					delete(activeTrades, exit.Symbol)
-					fmt.Printf("%s (%s) 銘柄:%-4s [エントリ:%5.0f - %5.0f :エグジット] 損益/トレード: %4.1f%%, 総資産:%10d\n",
-						exit.ExitDate.Format("2006-01-02"),
-						exit.EntryDate.Format("2006-01-02"),
-						exit.Symbol,
-						exit.EntryPrice,
-						exit.ExitPrice,
-						exit.ProfitLoss,
-						portfolioValue)
+					// 最適パラメータ時だけ表示したいので、if追加
+					if verbose {
+						fmt.Printf("%s (%s) 銘柄:%-4s [エントリ:%5.0f - %5.0f :エグジット] 損益/トレード: %4.1f%%, 総資産:%10d\n",
+							exit.ExitDate.Format("2006-01-02"),
+							exit.EntryDate.Format("2006-01-02"),
+							exit.Symbol,
+							exit.EntryPrice,
+							exit.ExitPrice,
+							exit.ProfitLoss,
+							portfolioValue)
+					}
 				}
 				// マップから削除してリソースを解放
 				delete(exitMap, exitDate)
