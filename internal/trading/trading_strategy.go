@@ -86,13 +86,22 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 					delete(activeTrades, exit.Symbol)
 					// 最適パラメータ時だけ表示したいので、if追加
 					if verbose {
-						fmt.Printf("%s (%s) 銘柄:%-4s [entry:%5.0f - %5.0f :exit] 損益/トレード: %4.1f%%, 総資産:%10d\n",
-							exit.ExitDate.Format("2006-01-02"),
+
+						entryCost := exit.EntryPrice * exit.PositionSize * (1 + *commissionRate/100)
+						exitValue := exit.ExitPrice * exit.PositionSize * (1 - *commissionRate/100)
+						profitPerPortfolio := (exitValue - entryCost) / float64(exit.PortfolioValue) * 100
+
+						fmt.Printf("(%s) %s [%4s] < entry - exit :%5.0f -%5.0f (%7.0f -%7.0f) > トレード損益: %+5.1f%%, ポートフォリオ損益: %+2.2f%%, 総資産:%10d\n",
+
 							exit.EntryDate.Format("2006-01-02"),
+							exit.ExitDate.Format("2006-01-02"),
 							exit.Symbol,
 							exit.EntryPrice,
 							exit.ExitPrice,
-							exit.ProfitLoss,
+							entryCost,
+							exitValue,
+							exit.ProfitLoss,    // 株価に対する割合
+							profitPerPortfolio, // 総資産に対する割合
 							portfolioValue)
 					}
 				}
@@ -107,7 +116,7 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 
 		availableFunds = portfolioValue
 		for _, trade := range activeTrades {
-			positionValue := trade.EntryPrice * trade.PositionSize
+			positionValue := trade.EntryPrice * trade.PositionSize * (1 + *commissionRate)
 			availableFunds -= int(positionValue)
 		}
 
@@ -122,7 +131,7 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 				continue
 			}
 
-			positionSize, entryCost, err := determinePositionSize(portfolioValue, availableFunds, entryPrice, commissionRate, &symbolData.DailyData, signal.SignalDate)
+			positionSize, entryCost, err := DeterminePositionSize(param.StopLossPercentage, portfolioValue, availableFunds, entryPrice, commissionRate, &symbolData.DailyData, signal.SignalDate)
 			if err != nil || entryCost == 0 {
 				continue
 			}
@@ -149,6 +158,9 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 			activeTrades[signal.Symbol] = record
 			exitMap[exitDate] = append(exitMap[exitDate], record)
 		}
+	}
+	if verbose {
+		fmt.Printf("トレード実行回数: %d\n", totalCount)
 	}
 
 	// 勝率の計算
