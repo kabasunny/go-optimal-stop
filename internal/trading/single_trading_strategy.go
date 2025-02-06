@@ -8,7 +8,7 @@ import (
 )
 
 // singleTradingStrategy: トレーディング戦略の実行
-func singleTradingStrategy(data *[]ml_stockdata.InMLDailyData, startDate time.Time, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (time.Time, time.Time, float64, float64, float64, error) {
+func singleTradingStrategy(data *[]ml_stockdata.InMLDailyData, startDate time.Time, param *ml_stockdata.Parameter) (time.Time, time.Time, float64, float64, float64, error) {
 	d := *data
 
 	// データが空の場合、エラーを返す
@@ -37,7 +37,7 @@ func singleTradingStrategy(data *[]ml_stockdata.InMLDailyData, startDate time.Ti
 	}
 
 	// 終了日と終了価格を見つける
-	endDate, endPrice, err := findExitDate(d, purchaseDate, purchasePrice, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
+	endDate, endPrice, err := findExitDate(d, purchaseDate, purchasePrice, param)
 	if err != nil {
 		return time.Time{}, time.Time{}, 0, 0, 0, err
 	}

@@ -9,34 +9,42 @@ import (
 )
 
 // OptimizeParameters 関数は、与えられた株価データとトレーディングパラメータに基づいて最適なパラメータの組み合わせを見つける
-func OptimizeParameters(response *ml_stockdata.InMLStockResponse, totalFunds *int, params *ml_stockdata.Parameters) (ml_stockdata.OptimizedResult, ml_stockdata.OptimizedResult, []ml_stockdata.OptimizedResult) {
+func OptimizeParameters(response *ml_stockdata.InMLStockResponse, totalFunds *int, params *ml_stockdata.Parameters, commissionRate *float64) (ml_stockdata.OptimizedResult, ml_stockdata.OptimizedResult, []ml_stockdata.OptimizedResult) {
 	var results []ml_stockdata.OptimizedResult // 最適化結果を格納するスライス
-	var mu sync.Mutex                          // 排他制御用のミューテックス
-	var wg sync.WaitGroup                      // 同期用のWaitGroup
 	verbose := false
+
+	var mu sync.Mutex     // 排他制御用のミューテックス
+	var wg sync.WaitGroup // 同期用のWaitGroup
 
 	// 各ストップロスパーセンテージ、トレーリングストップトリガー、トレーリングストップアップデートの組み合わせをループ処理
 	for _, stopLossPercentage := range params.StopLossPercentages {
 		for _, trailingStopTrigger := range params.TrailingStopTriggers {
 			for _, trailingStopUpdate := range params.TrailingStopUpdates {
+				// パラメータを設定
+				param := ml_stockdata.Parameter{
+					StopLossPercentage:  stopLossPercentage,
+					TrailingStopTrigger: trailingStopTrigger,
+					TrailingStopUpdate:  trailingStopUpdate,
+				}
+
 				wg.Add(1) // WaitGroupのカウントをインクリメント
-				go func(totalFunds *int, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) {
+				go func(param ml_stockdata.Parameter) {
 					defer wg.Done() // 処理終了時にWaitGroupのカウントをデクリメント
 					// トレーディング戦略を実行し、結果を取得
-					result, err := trading.TradingStrategy(response, totalFunds, stopLossPercentage, trailingStopTrigger, trailingStopUpdate, verbose)
+					result, err := trading.TradingStrategy(response, totalFunds, &param, commissionRate, verbose)
 					if err != nil {
 						return
 					}
 					// パラメータをOptimizedResult構造体に追加
-					result.StopLossPercentage = stopLossPercentage
-					result.TrailingStopTrigger = trailingStopTrigger
-					result.TrailingStopUpdate = trailingStopUpdate
+					result.StopLossPercentage = param.StopLossPercentage
+					result.TrailingStopTrigger = param.TrailingStopTrigger
+					result.TrailingStopUpdate = param.TrailingStopUpdate
 
 					// 結果をスライスに追加
 					mu.Lock()                         // 排他制御開始
 					results = append(results, result) // 結果をスライスに追加
 					mu.Unlock()                       // 排他制御終了
-				}(totalFunds, stopLossPercentage, trailingStopTrigger, trailingStopUpdate)
+				}(param)
 			}
 		}
 	}

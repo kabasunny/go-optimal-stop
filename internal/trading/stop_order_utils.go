@@ -16,9 +16,14 @@ func roundDown(value float64) float64 {
 }
 
 // findExitDate: 売却日と売却価格を決定
-func findExitDate(data []ml_stockdata.InMLDailyData, purchaseDate time.Time, purchasePrice, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64) (time.Time, float64, error) {
+func findExitDate(data []ml_stockdata.InMLDailyData, purchaseDate time.Time, purchasePrice float64, param *ml_stockdata.Parameter) (time.Time, float64, error) {
 	var endDate time.Time
 	var endPrice float64
+
+	// パラメータを保存
+	stopLossPercentage := param.StopLossPercentage
+	trailingStopTrigger := param.TrailingStopTrigger
+	trailingStopUpdate := param.TrailingStopUpdate
 
 	// ストップロスとトレーリングストップの閾値を計算
 	stopLossThreshold := roundDown(purchasePrice * (1 - stopLossPercentage/100))

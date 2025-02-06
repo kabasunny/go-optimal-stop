@@ -14,7 +14,8 @@ func main() {
 
 	filePath := "../py-signal-buy/result/ml_stock_response/proto_kmeans-cluster_label_0.bin"
 
-	totalFunds := 2000000
+	totalFunds := 10000000
+	commissionRate := 0.2 // 手数料率（例: 0.2%）
 
 	// 引数を定義
 	useRandom := flag.Bool("random", false, "Use random signals")
@@ -32,7 +33,7 @@ func main() {
 		fmt.Printf("学習モデルのシグナルで検証\n")
 
 		// 許容ドローダウン値を渡す
-		optimization.RunOptimization(&filePath, &totalFunds, params)
+		optimization.RunOptimization(&filePath, &totalFunds, params, &commissionRate)
 	} else {
 		fmt.Printf("ランダムにシグナルを作成し、結果を確認\n")
 
@@ -40,7 +41,7 @@ func main() {
 		attempts := 1         // useRandomSeed := true の時、ランダム値試行を繰り返す回数
 
 		// 許容ドローダウン値を渡す
-		random_signals.RunRandomSignals(&filePath, &totalFunds, params, useRandomSeed, attempts)
+		random_signals.RunRandomSignals(&filePath, &totalFunds, params, &commissionRate, useRandomSeed, attempts)
 	}
 
 	elapsed := time.Since(start)         // 経過時間を計算

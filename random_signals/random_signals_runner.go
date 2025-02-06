@@ -9,7 +9,7 @@ import (
 	"go-optimal-stop/optimization"
 )
 
-func RunRandomSignals(filePath *string, totalFunds *int, params *ml_stockdata.Parameters, useRandomSeed bool, attempts int) {
+func RunRandomSignals(filePath *string, totalFunds *int, params *ml_stockdata.Parameters, commissionRate *float64, useRandomSeed bool, attempts int) {
 
 	var stockResponse ml_stockdata.InMLStockResponse
 	var err error
@@ -42,16 +42,16 @@ func RunRandomSignals(filePath *string, totalFunds *int, params *ml_stockdata.Pa
 		fmt.Printf("パラメタ組合せ: %d, シグナル数: %d, 総試行回数: %d\n", trials, numSignals, totalTrials)
 
 		// パラメータの最適化を実行
-		_, _, results := optimization.OptimizeParameters(&stockResponse, totalFunds, params)
+		_, _, results := optimization.OptimizeParameters(&stockResponse, totalFunds, params, commissionRate)
 
 		// 実行時間を測定
 		elapsedTime := time.Since(startTime)
 
 		// 結果を表示
-		bestparm, _ := optimization.PrintAndReturnResults(results, elapsedTime)
+		bestparm, _, _ := optimization.PrintAndReturnResults(results, elapsedTime)
 
 		verbose := true
-		_, _ = trading.TradingStrategy(&stockResponse, totalFunds, bestparm.BestStopLossPercentage, bestparm.BestTrailingStopTrigger, bestparm.BestTrailingStopUpdate, verbose)
+		_, _ = trading.TradingStrategy(&stockResponse, totalFunds, &bestparm, commissionRate, verbose)
 
 	}
 }

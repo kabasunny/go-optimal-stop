@@ -8,17 +8,18 @@ import (
 )
 
 // determinePositionSize は、ATRに基づきポジションサイズとエントリー価格、エントリーコストを決定
-func determinePositionSize(portfolioValue int, availableFundsInt int, dailyData *[]ml_stockdata.InMLDailyData, signalDate time.Time) (float64, float64, float64, error) {
-	const commissionRate = 0.2 // 手数料率（例: 0.2%）
-	const unitSize = 100       // 単元数
+func determinePositionSize(portfolioValue int, availableFundsInt int, entryPrice float64, commissionRate *float64, dailyData *[]ml_stockdata.InMLDailyData, signalDate time.Time) (float64, float64, error) {
+
+	const unitSize = 100 // 単元数
 
 	availableFunds := float64(availableFundsInt)
 
+	// 引数に変更
 	// エントリー価格を取得
-	_, entryPrice, err := findPurchaseDate(*dailyData, signalDate)
-	if err != nil {
-		return 0, 0, 0, err
-	}
+	// _, entryPrice, err := findPurchaseDate(*dailyData, signalDate)
+	// if err != nil {
+	// 	return 0, 0, 0, err
+	// }
 
 	// ATRを計算
 	atr := calculateATR(dailyData, signalDate)
@@ -37,16 +38,16 @@ func determinePositionSize(portfolioValue int, availableFundsInt int, dailyData 
 
 	// 手数料を加味してエントリーコストを計算
 	entryCost := entryPrice * positionSize
-	commission := entryCost * (commissionRate / 100)
+	commission := entryCost * (*commissionRate / 100)
 	totalEntryCost := entryCost + commission
 
 	// 使用可能な資金に対してエントリーコストが足りるか確認
 	if totalEntryCost <= availableFunds && totalEntryCost <= float64(portfolioValue)/4 {
 		// 条件を満たす場合、ポジションサイズ、エントリー価格、エントリーコストを返す
-		return positionSize, entryPrice, totalEntryCost, nil
+		return positionSize, totalEntryCost, nil
 	} else {
 		// 条件を満たさない場合はエントリーしない
-		return 0, 0, 0, nil
+		return 0, 0, nil
 	}
 }
 

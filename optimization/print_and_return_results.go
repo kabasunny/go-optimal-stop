@@ -8,16 +8,7 @@ import (
 	"go-optimal-stop/internal/ml_stockdata"
 )
 
-type BestAndWorstParams struct {
-	BestStopLossPercentage   float64
-	BestTrailingStopTrigger  float64
-	BestTrailingStopUpdate   float64
-	WorstStopLossPercentage  float64
-	WorstTrailingStopTrigger float64
-	WorstTrailingStopUpdate  float64
-}
-
-func PrintAndReturnResults(results []ml_stockdata.OptimizedResult, elapsedTime time.Duration, options ...ResultOption) (BestAndWorstParams, error) {
+func PrintAndReturnResults(results []ml_stockdata.OptimizedResult, elapsedTime time.Duration, options ...ResultOption) (ml_stockdata.Parameter, ml_stockdata.Parameter, error) {
 	// オプションのデフォルト値を設定
 	opts := &resultOptions{}
 	for _, opt := range options {
@@ -66,18 +57,20 @@ func PrintAndReturnResults(results []ml_stockdata.OptimizedResult, elapsedTime t
 
 	// ベスト1とワースト1のパラメータを返す
 	if len(results) == 0 {
-		return BestAndWorstParams{}, fmt.Errorf("結果がありません")
+		return ml_stockdata.Parameter{}, ml_stockdata.Parameter{}, fmt.Errorf("結果がありません")
 	}
 
 	bestParams := results[0]
 	worstParams := results[len(results)-1]
 
-	return BestAndWorstParams{
-		BestStopLossPercentage:   bestParams.StopLossPercentage,
-		BestTrailingStopTrigger:  bestParams.TrailingStopTrigger,
-		BestTrailingStopUpdate:   bestParams.TrailingStopUpdate,
-		WorstStopLossPercentage:  worstParams.StopLossPercentage,
-		WorstTrailingStopTrigger: worstParams.TrailingStopTrigger,
-		WorstTrailingStopUpdate:  worstParams.TrailingStopUpdate,
-	}, nil
+	return ml_stockdata.Parameter{
+			StopLossPercentage:  bestParams.StopLossPercentage,
+			TrailingStopTrigger: bestParams.TrailingStopTrigger,
+			TrailingStopUpdate:  bestParams.TrailingStopUpdate,
+		},
+		ml_stockdata.Parameter{
+			StopLossPercentage:  worstParams.StopLossPercentage,
+			TrailingStopTrigger: worstParams.TrailingStopTrigger,
+			TrailingStopUpdate:  worstParams.TrailingStopUpdate,
+		}, nil
 }

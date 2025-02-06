@@ -2,7 +2,14 @@
 
 package ml_stockdata
 
-// Parameters 構造体の定義
+// Parameter 構造体の定義 単発用シミュ用
+type Parameter struct {
+	StopLossPercentage  float64
+	TrailingStopTrigger float64
+	TrailingStopUpdate  float64
+}
+
+// Parameters 構造体の定義 組合せ探索シミュ用
 type Parameters struct {
 	StopLossPercentages  []float64
 	TrailingStopTriggers []float64

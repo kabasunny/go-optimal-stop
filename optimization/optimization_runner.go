@@ -13,7 +13,7 @@ import (
 )
 
 // 許容ドローダウン値を渡す
-func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Parameters) {
+func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Parameters, commissionRate *float64) {
 	// startTime := time.Now() // 実行時間の測定開始
 
 	// ファイルを読み込み、stockResponseにプロトコルバッファバイナリからデータをマッピング
@@ -76,16 +76,16 @@ func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Par
 		modelStartTime := time.Now()
 
 		// すべてのシグナルが置き換えられた後にパラメータの最適化を実行
-		_, _, modelResults := OptimizeParameters(&stockResponse, totalFunds, params)
+		_, _, modelResults := OptimizeParameters(&stockResponse, totalFunds, params, commissionRate)
 
 		// モデルの実行時間を測定
 		modelElapsedTime := time.Since(modelStartTime)
 
 		// モデルごとの結果を表示
-		bestparm, _ := PrintAndReturnResults(modelResults, modelElapsedTime, WithModelName(modelName), WithSignalCount(signalCount))
+		bestparm, _, _ := PrintAndReturnResults(modelResults, modelElapsedTime, WithModelName(modelName), WithSignalCount(signalCount))
 
 		verbose := true
-		_, _ = trading.TradingStrategy(&stockResponse, totalFunds, bestparm.BestStopLossPercentage, bestparm.BestTrailingStopTrigger, bestparm.BestTrailingStopUpdate, verbose)
+		_, _ = trading.TradingStrategy(&stockResponse, totalFunds, &bestparm, commissionRate, verbose)
 
 		// 元のシグナルに戻す
 		for i := range protoResponse.SymbolData {

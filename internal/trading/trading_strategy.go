@@ -9,7 +9,7 @@ import (
 )
 
 // TradingStrategy 関数は、与えられた株価データとトレーディングパラメータに基づいて最適なパラメータの組み合わせを見つける
-func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, stopLossPercentage, trailingStopTrigger, trailingStopUpdate float64, options ...bool) (ml_stockdata.OptimizedResult, error) {
+func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, param *ml_stockdata.Parameter, commissionRate *float64, options ...bool) (ml_stockdata.OptimizedResult, error) {
 	var result ml_stockdata.OptimizedResult
 	var verbose bool
 
@@ -19,9 +19,9 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 	}
 
 	// パラメータを保存
-	result.StopLossPercentage = stopLossPercentage
-	result.TrailingStopTrigger = trailingStopTrigger
-	result.TrailingStopUpdate = trailingStopUpdate
+	result.StopLossPercentage = param.StopLossPercentage
+	result.TrailingStopTrigger = param.TrailingStopTrigger
+	result.TrailingStopUpdate = param.TrailingStopUpdate
 
 	// エントリー可能金額までのエントリー順序を決定する
 	signals := []struct {
@@ -86,7 +86,7 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 					delete(activeTrades, exit.Symbol)
 					// 最適パラメータ時だけ表示したいので、if追加
 					if verbose {
-						fmt.Printf("%s (%s) 銘柄:%-4s [エントリ:%5.0f - %5.0f :エグジット] 損益/トレード: %4.1f%%, 総資産:%10d\n",
+						fmt.Printf("%s (%s) 銘柄:%-4s [entry:%5.0f - %5.0f :exit] 損益/トレード: %4.1f%%, 総資産:%10d\n",
 							exit.ExitDate.Format("2006-01-02"),
 							exit.EntryDate.Format("2006-01-02"),
 							exit.Symbol,
@@ -115,7 +115,14 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 			if symbolData.Symbol != signal.Symbol {
 				continue
 			}
-			positionSize, entryPrice, entryCost, err := determinePositionSize(portfolioValue, availableFunds, &symbolData.DailyData, signal.SignalDate)
+			purchaseDate, exitDate, profitLoss, entryPrice, exitPrice, err := singleTradingStrategy(
+				&symbolData.DailyData, signal.SignalDate, param,
+			)
+			if err != nil {
+				continue
+			}
+
+			positionSize, entryCost, err := determinePositionSize(portfolioValue, availableFunds, entryPrice, commissionRate, &symbolData.DailyData, signal.SignalDate)
 			if err != nil || entryCost == 0 {
 				continue
 			}
@@ -123,14 +130,10 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 			if availableFundsAfterTrade < 0 {
 				continue
 			}
+
+			// エントリー可能な資金の更新
 			availableFunds = availableFundsAfterTrade
 
-			purchaseDate, exitDate, profitLoss, _, exitPrice, err := singleTradingStrategy(
-				&symbolData.DailyData, signal.SignalDate, stopLossPercentage, trailingStopTrigger, trailingStopUpdate,
-			)
-			if err != nil {
-				continue
-			}
 			record := tradeRecord{
 				Symbol:         signal.Symbol,
 				EntryDate:      purchaseDate,
