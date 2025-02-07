@@ -1,6 +1,7 @@
 package trading
 
 import (
+	"fmt"
 	"go-optimal-stop/internal/ml_stockdata"
 	"math"
 	"time"
@@ -14,24 +15,36 @@ func DeterminePositionSize(StopLossPercentage float64, portfolioValue int, avail
 
 	// ATRを計算
 	atr := calculateATR(dailyData, signalDate)
+	// fmt.Println("ATR:", atr)
 
-	// ポジションサイズを計算（ATR * 2 に基づく）
-	positionSize := (atr * 2) / (StopLossPercentage / 100 * entryPrice)
+	// 許容損失額を計算 (ポートフォリオ価値のストップロス割合)
+	allowedLoss := float64(portfolioValue) * (StopLossPercentage / 100)
+
+	// ストップロス幅をATRの2倍に設定（過去の価格変動の2倍の幅でストップロスを設定）
+	stopLossAmount := atr * 2
+
+	// ポジションサイズを計算
+	positionSize := allowedLoss / stopLossAmount
+	// fmt.Println("positionSize before unit size:", positionSize)
 
 	// ポジションサイズを調整して最小単元の倍数にする
 	positionSize = math.Floor(positionSize/float64(unitSize)) * float64(unitSize)
+	// fmt.Println("positionSize after unit size:", positionSize)
 
 	// 手数料を加味してエントリーコストを計算
 	entryCost := entryPrice * positionSize
 	commission := entryCost * (*commissionRate / 100)
 	totalEntryCost := entryCost + commission
+	// fmt.Println("totalEntryCost:", totalEntryCost)
 
 	// 使用可能な資金に対してエントリーコストが足りるか確認
+	// ポートフォリオの1/4までしか一つの銘柄に投資しないという制限
 	if totalEntryCost <= availableFunds && totalEntryCost <= float64(portfolioValue)/4 {
 		// 条件を満たす場合、ポジションサイズ、エントリーコストを返す
 		return positionSize, totalEntryCost, nil
 	} else {
 		// 条件を満たさない場合はエントリーしない
+		// fmt.Println("資金不足またはポートフォリオ制限")
 		return 0, 0, nil
 	}
 }
@@ -43,28 +56,32 @@ func calculateATR(dailyData *[]ml_stockdata.InMLDailyData, signalDate time.Time)
 	trueRanges := make([]float64, 0, n)
 
 	// signalDate以前のn日間のデータを収集
-	for i := len(*dailyData) - 1; i >= 0; i-- {
-		if len(trueRanges) >= n {
-			break
-		}
-
+	for i := len(*dailyData) - 1; i >= 1; i-- { // i >= 1 に変更 (yesterdayDataのために最低2つのデータが必要)
 		data := (*dailyData)[i]
 		date, _ := time.Parse("2006-01-02", data.Date)
-		if date.After(signalDate) || date.Equal(signalDate) {
+
+		// signalDateより後のデータはスキップ
+		if date.After(signalDate) {
 			continue
 		}
 
-		if i == 0 {
-			break
+		// signalDate当日のデータもスキップ
+		if date.Equal(signalDate) {
+			continue
 		}
 
 		yesterdayData := (*dailyData)[i-1]
 		trueRange := calculateTrueRange(data, yesterdayData)
-		trueRanges = append(trueRanges, trueRange)
+		trueRanges = append([]float64{trueRange}, trueRanges...) // 先頭に追加
+		//trueRanges = append(trueRanges, trueRange)
+		if len(trueRanges) >= n {
+			break
+		}
 	}
 
 	if len(trueRanges) == 0 {
-		return 1.5 // データが不足している場合のデフォルト値
+		fmt.Println("ATR計算に必要なデータが不足しています。エントリーを見送ります。")
+		return 0 // ATRが計算できない場合は、0を返す（ポジションサイズが0になる）
 	}
 
 	// ATRを計算

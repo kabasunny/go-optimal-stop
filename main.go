@@ -14,7 +14,7 @@ func main() {
 
 	filePath := "../py-signal-buy/result/ml_stock_response/proto_kmeans-cluster_label_0.bin"
 
-	totalFunds := 2000000
+	totalFunds := 200000000
 	commissionRate := 0.2 // 手数料率（例: 0.2%）
 
 	// 引数を定義
