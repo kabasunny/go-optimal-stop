@@ -69,6 +69,9 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 	// シンボルごとのエグジット情報を保持するマップ
 	exitMap := make(map[time.Time][]tradeRecord)
 
+	if verbose {
+		fmt.Printf(" [銘柄](  entry日 ) exit日:entry株価 - exit日 [entry金額(総資金割合) - exit金額] 株価損益,　総資金損益, 総資金\n")
+	}
 	// ---- シグナルの処理 ----
 	for _, signal := range signals {
 		for exitDate, exits := range exitMap {
@@ -90,15 +93,16 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 						entryCost := exit.EntryPrice * exit.PositionSize * (1 + *commissionRate/100)
 						exitValue := exit.ExitPrice * exit.PositionSize * (1 - *commissionRate/100)
 						profitPerPortfolio := (exitValue - entryCost) / float64(exit.PortfolioValue) * 100
+						positionRate := entryCost / float64(portfolioValue) * 100
 
-						fmt.Printf("(%s) %s [%4s] < entry - exit :%5.0f -%5.0f (%7.0f -%7.0f) > トレード損益: %+5.1f%%, ポートフォリオ損益: %+2.2f%%, 総資産:%10d\n",
-
+						fmt.Printf(" [%4s](%s) %s :%5.0f -%5.0f [%8.0f(%4.1f%%) -%8.0f] %+5.1f%%, %+5.2f%%, %10d\n",
+							exit.Symbol,
 							exit.EntryDate.Format("2006-01-02"),
 							exit.ExitDate.Format("2006-01-02"),
-							exit.Symbol,
 							exit.EntryPrice,
 							exit.ExitPrice,
 							entryCost,
+							positionRate,
 							exitValue,
 							exit.ProfitLoss,    // 株価に対する割合
 							profitPerPortfolio, // 総資産に対する割合
