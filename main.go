@@ -26,8 +26,8 @@ func main() {
 	params.SetStopLoss(2.0, 5.0, 1.0)
 	params.SetTrailingStop(5.0, 10.0, 1.0)
 	params.SetTrailingStopUpdate(2.0, 5.0, 1.0)
-	params.SetATRMultipliers(1.0, 3.0, 0.5)
-	params.SetRiskPercentages(0.3, 0.5, 0.1)
+	params.SetATRMultipliers(1.5, 3.5, 0.5)
+	params.SetRiskPercentages(0.3, 0.6, 0.1)
 
 	// 総資金に対して、許容可能な最大ドローダウンを設定する
 

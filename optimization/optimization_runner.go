@@ -52,11 +52,14 @@ func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Par
 
 	// モデル名correct_labelを最初に配置し、あとはmodel_predictionsフィールドから自動抽出し
 	modelNames := []string{"correct_label"}
+	otherModelNames := []string{}
 	for modelName := range protoResponse.SymbolData[0].ModelPredictions {
-		if modelName != "correct_label" {
-			modelNames = append(modelNames, modelName)
+		if modelName != "correct_label" && modelName != "ensemble_label" {
+			otherModelNames = append(otherModelNames, modelName)
 		}
 	}
+	modelNames = append(modelNames, otherModelNames...)
+	modelNames = append(modelNames, "ensemble_label")
 	fmt.Printf("実行SIM一覧: %v\n", modelNames)
 
 	for _, modelName := range modelNames {
@@ -65,6 +68,7 @@ func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Par
 		var signalCount int
 		for i := range protoResponse.SymbolData {
 			if modelPredictions, ok := protoResponse.SymbolData[i].ModelPredictions[modelName]; ok && modelPredictions != nil {
+				originalSignals[i] = stockResponse.SymbolData[i].Signals
 				stockResponse.SymbolData[i].Signals = modelPredictions.PredictionDates // 新しいシグナルを設定
 				signalCount += len(modelPredictions.PredictionDates)                   // 各シンボルのシグナル数をカウント
 			} else {
@@ -82,16 +86,24 @@ func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Par
 		modelElapsedTime := time.Since(modelStartTime)
 
 		// モデルごとの結果を表示
-		bestparm, _, _ := PrintAndReturnResults(modelResults, modelElapsedTime, WithModelName(modelName), WithSignalCount(signalCount))
+		bestparm, worstparam, _ := PrintAndReturnResults(modelResults, modelElapsedTime, WithModelName(modelName), WithSignalCount(signalCount))
 
 		verbose := true
-		_, _ = trading.TradingStrategy(&stockResponse, totalFunds, &bestparm, commissionRate, verbose)
+		if verbose {
+			fmt.Println("BESTパラメータで、トレードシミュレーション")
+			fmt.Printf(" [%-2s](%9s) %9s : %7s - %7s (%5s)[ %9s (%4s) - %9s ] %6s, %6s, %6s\n",
+				"銘柄", "entry日", "exit日", "entry株価", "exit株価", "size", "entry金額", "総割合", "exit金額", "単損益", "総損益", "総資金")
+			_, _ = trading.TradingStrategy(&stockResponse, totalFunds, &bestparm, commissionRate, verbose)
+
+			fmt.Println("WORSTパラメータで、トレードシミュレーション")
+			fmt.Printf(" [%-2s](%9s) %9s : %7s - %7s (%5s)[ %9s (%4s) - %9s ] %6s, %6s, %6s\n",
+				"銘柄", "entry日", "exit日", "entry株価", "exit株価", "size", "entry金額", "総割合", "exit金額", "単損益", "総損益", "総資金")
+			_, _ = trading.TradingStrategy(&stockResponse, totalFunds, &worstparam, commissionRate, verbose)
+		}
 
 		// 元のシグナルに戻す
 		for i := range protoResponse.SymbolData {
 			stockResponse.SymbolData[i].Signals = originalSignals[i]
 		}
-
 	}
-
 }

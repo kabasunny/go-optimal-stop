@@ -71,11 +71,6 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 	// シンボルごとのエグジット情報を保持するマップ
 	exitMap := make(map[time.Time][]tradeRecord)
 
-	if verbose {
-		fmt.Println("BESTパラメータでのトレードシミュレーション")
-		fmt.Printf(" [%-2s](%9s) %9s : %7s - %7s (%5s)[ %9s (%4s) - %9s ] %6s, %6s, %6s\n",
-			"銘柄", "entry日", "exit日", "entry株価", "exit株価", "size", "entry金額", "総割合", "exit金額", "単損益", "総損益", "総資金")
-	}
 	// ---- シグナルの処理 ----
 	for _, signal := range signals {
 		for exitDate, exits := range exitMap {

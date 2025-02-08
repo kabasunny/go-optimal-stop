@@ -48,10 +48,20 @@ func RunRandomSignals(filePath *string, totalFunds *int, params *ml_stockdata.Pa
 		elapsedTime := time.Since(startTime)
 
 		// 結果を表示
-		bestparm, _, _ := optimization.PrintAndReturnResults(results, elapsedTime)
+		bestparm, worstparam, _ := optimization.PrintAndReturnResults(results, elapsedTime)
 
 		verbose := true
-		_, _ = trading.TradingStrategy(&stockResponse, totalFunds, &bestparm, commissionRate, verbose)
+		if verbose {
+			fmt.Println("BESTパラメータで、トレードシミュレーション")
+			fmt.Printf(" [%-2s](%9s) %9s : %7s - %7s (%5s)[ %9s (%4s) - %9s ] %6s, %6s, %6s\n",
+				"銘柄", "entry日", "exit日", "entry株価", "exit株価", "size", "entry金額", "総割合", "exit金額", "単損益", "総損益", "総資金")
+			_, _ = trading.TradingStrategy(&stockResponse, totalFunds, &bestparm, commissionRate, verbose)
+
+			fmt.Println("WORSTパラメータで、トレードシミュレーション")
+			fmt.Printf(" [%-2s](%9s) %9s : %7s - %7s (%5s)[ %9s (%4s) - %9s ] %6s, %6s, %6s\n",
+				"銘柄", "entry日", "exit日", "entry株価", "exit株価", "size", "entry金額", "総割合", "exit金額", "単損益", "総損益", "総資金")
+			_, _ = trading.TradingStrategy(&stockResponse, totalFunds, &worstparam, commissionRate, verbose)
+		}
 
 	}
 }
