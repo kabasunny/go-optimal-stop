@@ -2,9 +2,12 @@ package ml_stockdata
 
 // OptimizedResult 構造体の定義
 type OptimizedResult struct {
-	StopLossPercentage   float64 // 初回はロスカット、以降はストップオーダーの設定値となる
-	TrailingStopTrigger  float64 // トレイリングストップのトリガー閾値
-	TrailingStopUpdate   float64 // トレイリングストップトリガー発動時の設定値
+	StopLossPercentage  float64 // 初回はロスカット、以降はストップオーダーの設定値となる
+	TrailingStopTrigger float64 // トレイリングストップのトリガー閾値
+	TrailingStopUpdate  float64 // トレイリングストップトリガー発動時の設定値
+	ATRMultiplier       float64 // ← 追加：ATR倍率のリスト
+	RiskPercentage      float64 // ← 追加：リスク許容度のリスト
+
 	ProfitLoss           float64 // 損益率
 	WinRate              float64 // 勝率
 	MaxConsecutiveProfit float64 // 連続して加算された最大利益の幅

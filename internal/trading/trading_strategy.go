@@ -22,6 +22,8 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 	result.StopLossPercentage = param.StopLossPercentage
 	result.TrailingStopTrigger = param.TrailingStopTrigger
 	result.TrailingStopUpdate = param.TrailingStopUpdate
+	result.ATRMultiplier = param.ATRMultiplier
+	result.RiskPercentage = param.RiskPercentage
 
 	// エントリー可能金額までのエントリー順序を決定する
 	signals := []struct {
@@ -70,7 +72,9 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 	exitMap := make(map[time.Time][]tradeRecord)
 
 	if verbose {
-		fmt.Printf(" [銘柄](  entry日 ) exit日:entry株価 - exit日 [entry金額(総資金割合) - exit金額] 株価損益,　総資金損益, 総資金\n")
+		fmt.Println("BESTパラメータでのトレードシミュレーション")
+		fmt.Printf(" [%-2s](%9s) %9s : %7s - %7s (%5s)[ %9s (%4s) - %9s ] %6s, %6s, %6s\n",
+			"銘柄", "entry日", "exit日", "entry株価", "exit株価", "size", "entry金額", "総割合", "exit金額", "単損益", "総損益", "総資金")
 	}
 	// ---- シグナルの処理 ----
 	for _, signal := range signals {
@@ -87,20 +91,21 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 					totalCount++
 					tradeResults = append(tradeResults, exit)
 					delete(activeTrades, exit.Symbol)
+
 					// 最適パラメータ時だけ表示したいので、if追加
 					if verbose {
-
 						entryCost := exit.EntryPrice * exit.PositionSize * (1 + *commissionRate/100)
 						exitValue := exit.ExitPrice * exit.PositionSize * (1 - *commissionRate/100)
 						profitPerPortfolio := (exitValue - entryCost) / float64(exit.PortfolioValue) * 100
-						positionRate := entryCost / float64(portfolioValue) * 100
+						positionRate := entryCost / float64(exit.PortfolioValue) * 100
 
-						fmt.Printf(" [%4s](%s) %s :%5.0f -%5.0f [%8.0f(%4.1f%%) -%8.0f] %+5.1f%%, %+5.2f%%, %10d\n",
+						fmt.Printf(" [%-4s](%10s) %10s : %9.0f - %9.0f (%5.0f)[ %11.0f (%6.1f%%) - %11.0f ] %8.1f%%, %8.2f%%, %10d\n",
 							exit.Symbol,
 							exit.EntryDate.Format("2006-01-02"),
 							exit.ExitDate.Format("2006-01-02"),
 							exit.EntryPrice,
 							exit.ExitPrice,
+							exit.PositionSize,
 							entryCost,
 							positionRate,
 							exitValue,
@@ -135,7 +140,7 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 				continue
 			}
 
-			positionSize, entryCost, err := DeterminePositionSize(param.StopLossPercentage, portfolioValue, availableFunds, entryPrice, commissionRate, &symbolData.DailyData, signal.SignalDate)
+			positionSize, entryCost, err := DeterminePositionSize(param, portfolioValue, availableFunds, entryPrice, commissionRate, &symbolData.DailyData, signal.SignalDate)
 			if err != nil || entryCost == 0 {
 				continue
 			}

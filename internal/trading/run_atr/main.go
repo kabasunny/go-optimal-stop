@@ -28,13 +28,15 @@ func main() {
 	}
 
 	signalDate, _ := time.Parse("2006-01-02", "2025-01-14")
-	StopLossPercentage := 2.0
+	param := ml_stockdata.Parameter{}
+	param.RiskPercentage = 2.0
+	param.ATRMultiplier = 2.0
 	portfolioValue := 1000000
 	availableFundsInt := 500000
 	entryPrice := 115.0
 	commissionRate := 0.1
 
-	positionSize, entryCost, err := trading.DeterminePositionSize(StopLossPercentage, portfolioValue, availableFundsInt, entryPrice, &commissionRate, &dailyData, signalDate)
+	positionSize, entryCost, err := trading.DeterminePositionSize(&param, portfolioValue, availableFundsInt, entryPrice, &commissionRate, &dailyData, signalDate)
 
 	if err != nil {
 		fmt.Printf("エラーが発生しました: %v\n", err)

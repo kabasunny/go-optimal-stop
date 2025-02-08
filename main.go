@@ -12,9 +12,9 @@ import (
 func main() {
 	start := time.Now() // 開始時刻を記録
 
-	filePath := "../py-signal-buy/result/ml_stock_response/proto_kmeans-cluster_label_4.bin"
+	filePath := "../py-signal-buy/result/ml_stock_response/proto_kmeans-cluster_label_0.bin"
 
-	totalFunds := 2000000
+	totalFunds := 2500000
 	commissionRate := 0.2 // 手数料率（例: 0.2%）
 
 	// 引数を定義
@@ -23,9 +23,11 @@ func main() {
 
 	// Parameters構造体を作成し、関数を使ってパラメータを設定
 	params := &ml_stockdata.Parameters{}
-	params.SetStopLoss(1.0, 5.0, 1.0)
-	params.SetTrailingStop(5.0, 20.0, 1.0)
-	params.SetTrailingStopUpdate(1.0, 5.0, 1.0)
+	params.SetStopLoss(2.0, 5.0, 1.0)
+	params.SetTrailingStop(5.0, 10.0, 1.0)
+	params.SetTrailingStopUpdate(2.0, 5.0, 1.0)
+	params.SetATRMultipliers(1.0, 3.0, 0.5)
+	params.SetRiskPercentages(0.3, 0.5, 0.1)
 
 	// 総資金に対して、許容可能な最大ドローダウンを設定する
 

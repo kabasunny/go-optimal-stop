@@ -37,7 +37,7 @@ func RunRandomSignals(filePath *string, totalFunds *int, params *ml_stockdata.Pa
 		fmt.Printf("Symbols: %v\n", symbols)
 
 		// 総試行回数を算出
-		trials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates)
+		trials := len(params.StopLossPercentages) * len(params.TrailingStopTriggers) * len(params.TrailingStopUpdates) * len(params.ATRMultipliers) * len(params.RiskPercentages)
 		totalTrials := trials * numSignals * len(stockResponse.SymbolData)
 		fmt.Printf("パラメタ組合せ: %d, シグナル数: %d, 総試行回数: %d\n", trials, numSignals, totalTrials)
 

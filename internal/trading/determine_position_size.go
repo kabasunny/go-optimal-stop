@@ -8,7 +8,7 @@ import (
 )
 
 // determinePositionSize は、ATRに基づきポジションサイズとエントリー価格、エントリーコストを決定
-func DeterminePositionSize(StopLossPercentage float64, portfolioValue int, availableFundsInt int, entryPrice float64, commissionRate *float64, dailyData *[]ml_stockdata.InMLDailyData, signalDate time.Time) (float64, float64, error) {
+func DeterminePositionSize(param *ml_stockdata.Parameter, portfolioValue int, availableFundsInt int, entryPrice float64, commissionRate *float64, dailyData *[]ml_stockdata.InMLDailyData, signalDate time.Time) (float64, float64, error) {
 
 	const unitSize = 100 // 単元数
 	availableFunds := float64(availableFundsInt)
@@ -18,10 +18,10 @@ func DeterminePositionSize(StopLossPercentage float64, portfolioValue int, avail
 	// fmt.Println("ATR:", atr)
 
 	// 許容損失額を計算 (ポートフォリオ価値のストップロス割合)
-	allowedLoss := float64(portfolioValue) * (StopLossPercentage / 100)
+	allowedLoss := float64(portfolioValue) * (param.StopLossPercentage / 100)
 
 	// ストップロス幅をATRの2倍に設定（過去の価格変動の2倍の幅でストップロスを設定）
-	stopLossAmount := atr * 2
+	stopLossAmount := atr * param.ATRMultiplier
 
 	// ポジションサイズを計算
 	positionSize := allowedLoss / stopLossAmount
@@ -39,7 +39,7 @@ func DeterminePositionSize(StopLossPercentage float64, portfolioValue int, avail
 
 	// 使用可能な資金に対してエントリーコストが足りるか確認
 	// ポートフォリオの1/4までしか一つの銘柄に投資しないという制限
-	if totalEntryCost <= availableFunds && totalEntryCost <= float64(portfolioValue)/4 {
+	if totalEntryCost <= availableFunds && totalEntryCost <= float64(portfolioValue)*param.RiskPercentage {
 		// 条件を満たす場合、ポジションサイズ、エントリーコストを返す
 		return positionSize, totalEntryCost, nil
 	} else {
