@@ -5,6 +5,7 @@ import (
 	"go-optimal-stop/internal/ml_stockdata"
 	"math"
 	"sort"
+	"strconv"
 	"time"
 )
 
@@ -94,7 +95,7 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 						profitPerPortfolio := (exitValue - entryCost) / float64(exit.PortfolioValue) * 100
 						positionRate := entryCost / float64(exit.PortfolioValue) * 100
 
-						fmt.Printf(" [%-4s](%10s) %10s : %9.0f - %9.0f (%5.0f)[ %11.0f (%6.1f%%) - %11.0f ] %8.1f%%, %8.2f%%, %10d\n",
+						fmt.Printf(" [%-4s](%10s) %10s : %9.0f - %9.0f (%5.0f)[ %11.0f (%6.1f%%) - %11.0f ] %8.1f%%, %8.2f%%, %10s\n",
 							exit.Symbol,
 							exit.EntryDate.Format("2006-01-02"),
 							exit.ExitDate.Format("2006-01-02"),
@@ -106,7 +107,7 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 							exitValue,
 							exit.ProfitLoss,    // 株価に対する割合
 							profitPerPortfolio, // 総資産に対する割合
-							portfolioValue)
+							formatNumber(portfolioValue))
 					}
 				}
 				// マップから削除してリソースを解放
@@ -194,4 +195,20 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 	result.ProfitLoss = float64((portfolioValue - originalTotalFunds) * 100 / originalTotalFunds)
 
 	return result, nil
+}
+
+func formatNumber(n int) string {
+	in := strconv.FormatInt(int64(n), 10)
+	out := make([]byte, len(in)+(len(in)-1)/3)
+	for i, j, k := len(in)-1, len(out)-1, 0; ; i, j = i-1, j-1 {
+		out[j] = in[i]
+		if i == 0 {
+			return string(out)
+		}
+		if k++; k > 2 {
+			k = 0
+			j--
+			out[j] = ','
+		}
+	}
 }

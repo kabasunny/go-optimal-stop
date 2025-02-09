@@ -18,35 +18,59 @@ func DeterminePositionSize(param *ml_stockdata.Parameter, portfolioValue int, av
 	// fmt.Println("ATR:", atr)
 
 	// 許容損失額を計算 (ポートフォリオ価値のストップロス割合)
-	allowedLoss := float64(portfolioValue) * (param.StopLossPercentage / 100)
+	allowedLoss := float64(portfolioValue) * (param.RiskPercentage / 100)
 
 	// ストップロス幅をATRの2倍に設定（過去の価格変動の2倍の幅でストップロスを設定）
 	stopLossAmount := atr * param.ATRMultiplier
 
-	// ポジションサイズを計算
-	positionSize := allowedLoss / stopLossAmount
+	// 初期ポジションサイズを計算
+	initialPositionSize := allowedLoss / stopLossAmount
 	// fmt.Println("positionSize before unit size:", positionSize)
 
 	// ポジションサイズを調整して最小単元の倍数にする
-	positionSize = math.Floor(positionSize/float64(unitSize)) * float64(unitSize)
+	initialPositionSize = math.Floor(initialPositionSize/float64(unitSize)) * float64(unitSize)
 	// fmt.Println("positionSize after unit size:", positionSize)
 
 	// 手数料を加味してエントリーコストを計算
-	entryCost := entryPrice * positionSize
-	commission := entryCost * (*commissionRate / 100)
-	totalEntryCost := entryCost + commission
+	initialEntryCost := entryPrice * initialPositionSize
+	commission := initialEntryCost * (*commissionRate / 100)
+	initialTotalEntryCost := initialEntryCost + commission
 	// fmt.Println("totalEntryCost:", totalEntryCost)
 
-	// 使用可能な資金に対してエントリーコストが足りるか確認
-	// ポートフォリオの1/4までしか一つの銘柄に投資しないという制限
-	if totalEntryCost <= availableFunds && totalEntryCost <= float64(portfolioValue)*param.RiskPercentage {
-		// 条件を満たす場合、ポジションサイズ、エントリーコストを返す
-		return positionSize, totalEntryCost, nil
-	} else {
-		// 条件を満たさない場合はエントリーしない
-		// fmt.Println("資金不足またはポートフォリオ制限")
+	// 使用可能な資金に対してエントリーコストが足りるか、
+	// かつ、ポートフォリオのリスク許容範囲を超えないようにポジションサイズを調整
+	maxPositionSize := initialPositionSize
+
+	if initialTotalEntryCost > availableFunds {
+		// 利用可能資金を超える場合、ポジションサイズを縮小
+		maxPositionSize = math.Floor((availableFunds/(entryPrice*(1+(*commissionRate/100))))/float64(unitSize)) * float64(unitSize)
+		// エントリーコストを再計算
+		initialEntryCost = entryPrice * maxPositionSize
+		commission = initialEntryCost * (*commissionRate / 100)
+		initialTotalEntryCost = initialEntryCost + commission
+	}
+
+	// ポートフォリオのリスク許容範囲を超えないようにポジションサイズを調整
+	riskLimitEntryCost := float64(portfolioValue) * param.RiskPercentage
+	if initialTotalEntryCost > riskLimitEntryCost {
+		maxPositionSize = math.Floor((riskLimitEntryCost/(entryPrice*(1+(*commissionRate/100))))/float64(unitSize)) * float64(unitSize)
+		// エントリーコストを再計算
+		initialEntryCost = entryPrice * maxPositionSize
+		commission = initialEntryCost * (*commissionRate / 100)
+		initialTotalEntryCost = initialEntryCost + commission
+	}
+
+	// 最終的なポジションサイズとエントリーコスト
+	positionSize := maxPositionSize
+	totalEntryCost := initialTotalEntryCost
+
+	// ポジションサイズがゼロ以下の場合、エントリーしない
+	if positionSize <= 0 {
 		return 0, 0, nil
 	}
+
+	return positionSize, totalEntryCost, nil
+
 }
 
 // calculateATR は、過去一定期間のATR（Average True Range）を計算する
