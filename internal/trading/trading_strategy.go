@@ -78,12 +78,16 @@ func TradingStrategy(response *ml_stockdata.InMLStockResponse, totalFunds *int, 
 			if signal.SignalDate.After(exitDate) {
 				for _, exit := range exits {
 					profitInAmount := exit.ProfitLoss / 100 * exit.PositionSize * exit.EntryPrice
-					portfolioValue += int(profitInAmount)
+
+					// 勝ち負けのカウント、勝ちの場合は税金20パーセント
 					if exit.ProfitLoss > 0 {
 						result.TotalWins++
+						profitInAmount *= 0.8
 					} else {
 						result.TotalLosses++
 					}
+
+					portfolioValue += int(profitInAmount)
 					totalCount++
 					tradeResults = append(tradeResults, exit)
 					delete(activeTrades, exit.Symbol)
