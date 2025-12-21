@@ -9,7 +9,7 @@ import (
 	"go-optimal-stop/optimization"
 )
 
-func RunRandomSignals(filePath *string, totalFunds *int, params *ml_stockdata.Parameters, commissionRate *float64, useRandomSeed bool, attempts int) {
+func RunRandomSignals(filePath *string, totalFunds *int, params *ml_stockdata.Parameters, commissionRate *float64, useRandomSeed bool, attempts int, outputFilePath *string) {
 
 	var stockResponse ml_stockdata.InMLStockResponse
 	var err error
@@ -48,7 +48,7 @@ func RunRandomSignals(filePath *string, totalFunds *int, params *ml_stockdata.Pa
 		elapsedTime := time.Since(startTime)
 
 		// 結果を表示
-		bestparm, worstparam, _ := optimization.PrintAndReturnResults(results, elapsedTime)
+		bestparm, worstparam, _ := optimization.PrintAndReturnResults(results, elapsedTime, outputFilePath)
 
 		verbose := true
 		if verbose {

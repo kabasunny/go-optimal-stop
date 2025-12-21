@@ -1,0 +1,31 @@
+# Simulation settings
+simulation:
+  # Path to the protocol buffer file containing stock data and signals
+  data_file_path: "../py-signal-buy/result/ml_stock_response/proto_kmeans-cluster_label_0.bin"
+  # Initial funds for the simulation
+  total_funds: 2500000
+  # Commission rate per trade (e.g., 0.2 for 0.2%)
+  commission_rate: 0.2
+
+# Parameter optimization search space
+optimization_parameters:
+  stop_loss:
+    min: 2.0
+    max: 5.0
+    step: 1.0
+  trailing_stop:
+    min: 5.0
+    max: 10.0
+    step: 1.0
+  trailing_stop_update:
+    min: 2.0
+    max: 5.0
+    step: 1.0
+  atr_multipliers:
+    min: 1.5
+    max: 3.5
+    step: 0.5
+  risk_percentages:
+    min: 0.5
+    max: 2.0
+    step: 0.5

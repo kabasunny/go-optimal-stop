@@ -1,19 +1,33 @@
 package optimization
 
 import (
+	"encoding/json" // Import for JSON encoding
 	"fmt"
+	"io/ioutil"     // For writing files
 	"sort"
 	"time"
 
 	"go-optimal-stop/internal/ml_stockdata"
 )
 
-func PrintAndReturnResults(results []ml_stockdata.OptimizedResult, elapsedTime time.Duration, options ...ResultOption) (ml_stockdata.Parameter, ml_stockdata.Parameter, error) {
+// PrintAndReturnResults prints optimization results to console and optionally saves them to a file.
+func PrintAndReturnResults(results []ml_stockdata.OptimizedResult, elapsedTime time.Duration, outputFilePath *string, options ...ResultOption) (ml_stockdata.Parameter, ml_stockdata.Parameter, error) {
 	// オプションのデフォルト値を設定
 	opts := &resultOptions{}
 	for _, opt := range options {
 		opt(opts)
 	}
+
+	// Save all results to file if outputFilePath is provided
+	if outputFilePath != nil && *outputFilePath != "" {
+		if err := saveResultsToFile(results, *outputFilePath); err != nil {
+			fmt.Printf("Error saving results to file %s: %v\n", *outputFilePath, err)
+		} else {
+			fmt.Printf("Results successfully saved to %s\n", *outputFilePath)
+		}
+	}
+
+	// (Rest of the original function content follows)
 
 	// 結果をソート
 	sort.Slice(results, func(i, j int) bool {
@@ -78,3 +92,19 @@ func PrintAndReturnResults(results []ml_stockdata.OptimizedResult, elapsedTime t
 			RiskPercentage:      worstParams.RiskPercentage,
 		}, nil
 }
+
+// saveResultsToFile saves the slice of OptimizedResult to a JSON file.
+func saveResultsToFile(results []ml_stockdata.OptimizedResult, filePath string) error {
+	jsonData, err := json.MarshalIndent(results, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal results to JSON: %w", err)
+	}
+
+	err = ioutil.WriteFile(filePath, jsonData, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write JSON data to file %s: %w", filePath, err)
+	}
+
+	return nil
+}
+

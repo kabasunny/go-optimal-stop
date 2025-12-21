@@ -25,5 +25,8 @@ func calculateSharpeRatio(tradeResults []tradeRecord, riskFreeRate float64) floa
 	stdDev := standardDeviation(excessReturns)
 
 	// シャープレシオを計算
+	if stdDev == 0 {
+		return 0 // Avoid division by zero; if there's no risk (stdDev=0), Sharpe Ratio is 0.
+	}
 	return (meanReturn - riskFreeRate) / stdDev
 }

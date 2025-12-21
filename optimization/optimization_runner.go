@@ -13,7 +13,7 @@ import (
 )
 
 // 許容ドローダウン値を渡す
-func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Parameters, commissionRate *float64) {
+func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Parameters, commissionRate *float64, outputFilePath *string) {
 	// startTime := time.Now() // 実行時間の測定開始
 
 	// ファイルを読み込み、stockResponseにプロトコルバッファバイナリからデータをマッピング
@@ -86,7 +86,7 @@ func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Par
 		modelElapsedTime := time.Since(modelStartTime)
 
 		// モデルごとの結果を表示
-		bestparm, worstparam, _ := PrintAndReturnResults(modelResults, modelElapsedTime, WithModelName(modelName), WithSignalCount(signalCount))
+		bestparm, worstparam, _ := PrintAndReturnResults(modelResults, modelElapsedTime, outputFilePath, WithModelName(modelName), WithSignalCount(signalCount))
 
 		verbose := true
 		if verbose {
