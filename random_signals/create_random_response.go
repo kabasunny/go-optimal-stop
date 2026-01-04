@@ -38,11 +38,22 @@ func createStockResponse(filePath *string, seed ...int64) (ml_stockdata.InMLStoc
 		symbols = append(symbols, stockResponse.SymbolData[i].Symbol)
 
 		// 検出したシグナル数でランダムにシグナルを生成
-		var signals []string
+		var signalDates []string
 		if len(seed) > 0 {
-			signals = generateRandomSignals(stockResponse.SymbolData[i].DailyData, numSignals, seed[0])
+			signalDates = generateRandomSignals(stockResponse.SymbolData[i].DailyData, numSignals, seed[0])
 		} else {
-			signals = generateRandomSignals(stockResponse.SymbolData[i].DailyData, numSignals)
+			signalDates = generateRandomSignals(stockResponse.SymbolData[i].DailyData, numSignals)
+		}
+
+		// 文字列のシグナルをSignal構造体に変換
+		var signals []ml_stockdata.Signal
+		for _, dateStr := range signalDates {
+			signal := ml_stockdata.Signal{
+				Date:       dateStr,
+				Type:       ml_stockdata.SignalTypeBuy, // デフォルトは買いシグナル
+				Confidence: 1.0,                        // デフォルトの信頼度
+			}
+			signals = append(signals, signal)
 		}
 		stockResponse.SymbolData[i].Signals = signals
 

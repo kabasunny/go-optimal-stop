@@ -6,6 +6,10 @@ simulation:
   total_funds: 2500000
   # Commission rate per trade (e.g., 0.2 for 0.2%)
   commission_rate: 0.2
+  # Enable sell signal processing
+  use_sell_signals: true
+  # Sell signal mode: "override" (売りシグナルが自動売却を上書き) or "hybrid" (両方を組み合わせ)
+  sell_signal_mode: "override"
 
 # Parameter optimization search space
 optimization_parameters:
@@ -29,3 +33,10 @@ optimization_parameters:
     min: 0.5
     max: 2.0
     step: 0.5
+
+# Sell signal parameters (optional)
+sell_signal_parameters:
+  # Minimum holding period before sell signal can be executed (days)
+  min_holding_period: 1
+  # Confidence threshold for sell signals (0.0 to 1.0)
+  confidence_threshold: 0.5

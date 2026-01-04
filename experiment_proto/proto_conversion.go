@@ -10,7 +10,17 @@ func ConvertProtoToInternal(protoResponse *MLStockResponse) ml_stockdata.InMLSto
 	for _, protoSymbolData := range protoResponse.SymbolData {
 		var symbolData ml_stockdata.InMLSymbolData
 		symbolData.Symbol = protoSymbolData.Symbol
-		symbolData.Signals = protoSymbolData.Signals
+
+		// 文字列のシグナルをSignal構造体に変換（既存データとの互換性のため、すべて買いシグナルとして扱う）
+		for _, signalDate := range protoSymbolData.Signals {
+			signal := ml_stockdata.Signal{
+				Date:       signalDate,
+				Type:       ml_stockdata.SignalTypeBuy, // デフォルトは買いシグナル
+				Confidence: 1.0,                        // デフォルトの信頼度
+			}
+			symbolData.Signals = append(symbolData.Signals, signal)
+		}
+
 		symbolData.Priority = protoSymbolData.Priority // int64として直接割り当て
 		for _, protoDailyData := range protoSymbolData.DailyData {
 			dailyData := ml_stockdata.InMLDailyData{

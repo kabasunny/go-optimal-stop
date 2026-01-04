@@ -64,13 +64,23 @@ func RunOptimization(filePath *string, totalFunds *int, params *ml_stockdata.Par
 
 	for _, modelName := range modelNames {
 		// すべてのシンボルに対してシグナルを一斉に置き換える
-		originalSignals := make(map[int][]string)
+		originalSignals := make(map[int][]ml_stockdata.Signal)
 		var signalCount int
 		for i := range protoResponse.SymbolData {
 			if modelPredictions, ok := protoResponse.SymbolData[i].ModelPredictions[modelName]; ok && modelPredictions != nil {
 				originalSignals[i] = stockResponse.SymbolData[i].Signals
-				stockResponse.SymbolData[i].Signals = modelPredictions.PredictionDates // 新しいシグナルを設定
-				signalCount += len(modelPredictions.PredictionDates)                   // 各シンボルのシグナル数をカウント
+				// 文字列のシグナルをSignal構造体に変換
+				var newSignals []ml_stockdata.Signal
+				for _, dateStr := range modelPredictions.PredictionDates {
+					signal := ml_stockdata.Signal{
+						Date:       dateStr,
+						Type:       ml_stockdata.SignalTypeBuy, // デフォルトは買いシグナル
+						Confidence: 1.0,                        // デフォルトの信頼度
+					}
+					newSignals = append(newSignals, signal)
+				}
+				stockResponse.SymbolData[i].Signals = newSignals
+				signalCount += len(modelPredictions.PredictionDates) // 各シンボルのシグナル数をカウント
 			} else {
 				fmt.Printf("モデル: %s の予測データが見つかりませんでした。シンボル: %s をスキップします。\n", modelName, protoResponse.SymbolData[i].Symbol)
 			}

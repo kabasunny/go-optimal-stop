@@ -15,4 +15,6 @@ type tradeRecord struct {
 	EntryPrice     float64 // 一株の価格
 	ExitPrice      float64 // 一株の価格
 	PortfolioValue int     // 総資産
+	ExitReason     string  // 売却理由: "StopLoss", "TrailingStop", "SellSignal"
+	SignalBased    bool    // シグナルベースの売却かどうか
 }
